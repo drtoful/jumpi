@@ -1,0 +1,72 @@
+{% extends "base.xhtml" %}
+
+{% block script %}
+<script type="text/javascript">
+    $(document).ready(function() {
+        $("#add_key_form").hide();
+        $("#add_key_button").click(function() {
+            $("#add_key_form").toggle();
+        })
+        $(".key_delete_button").click(function() {
+            var c = confirm("Are you sure you want to delete this key?");
+            if (c) {
+                $.post("{{ url_for('user.delete_key') }}", {id: $(this).attr("dbid")}, function(data) {
+                    window.location.href = "{{ url_for('user.index') }}";
+                });
+            }
+        })
+    })
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="panel panel-default">
+    <div class="panel-heading">
+        <strong>User Keys</strong>
+    </div>
+    <div class="panel-body">
+        <p><small>This is a list of SSH keys associated with a user. All these keys are enabled to login to your JumPi.</small></p>
+        <button type="button" class="btn btn-success btn-xs" id="add_key_button">Add key</button>
+    </div>
+        <div class="list-group">
+        {% for user in users %}
+            <div href="#" class="list-group-item">
+                <i class="fa fa-key fa-fw fa-3x pull-left"></i>
+                <button type="button" class="btn btn-danger btn-xs pull-right key_delete_button" dbid="{{ user.id }}">delete</button>
+                <strong>{{ user.fullname }}</strong>
+                <p>{{ user.ssh_fingerprint }}</p>
+                <p>Added <time>{{ user.time_added }}</time>{% if user.time_lastaccess %} - Last used <time>{{ user.time_lastaccess }}</time>{% endif %}<p>
+            </div>
+        {% endfor %}
+        </div>
+</div>
+
+<div class="panel panel-default" id="add_key_form">
+    <div class="panel-heading">
+        <strong>Add User Key</strong>
+    </div>
+    <div class="panel-body">
+        <form class="form-horizontal" method="post" action="{{ url_for('user.add_key') }}">
+            <fieldset>
+                <div class="form-group">
+                    <label for="inputTitle" class="col-lg-2 control-label">Title</label>
+                    <div class="col-lg-10">
+                        <input type="text" class="form-control" id="inputTitle" name="title" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="inputKey" class="col-lg-2 control-label">SSH Key</label>
+                    <div class="col-lg-10">
+                        <textarea class="form-control" rows="3" id="inputKey" name="key"></textarea>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-lg-10 col-lg-offset-2">
+                        <button type="submit" class="btn btn-primary">Add</button>
+                    </div>
+                </div>
+            </fieldset>
+        </form>
+    </div>
+</div>
+{% endblock %}
