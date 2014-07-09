@@ -8,5 +8,6 @@ class JumpiConfig(object):
     MODULES = [
         ("jumpi.web.base.base", "/"),
         ("jumpi.web.user.user", "/user"),
+        ("jumpi.web.system.system", "/system"),
     ]
 
