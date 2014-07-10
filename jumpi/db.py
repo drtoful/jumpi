@@ -19,6 +19,13 @@ class User(_Base):
     time_added = Column(DateTime(timezone="UTC"), nullable=False)
     time_lastaccess = Column(DateTime(timezone="UTC"))
 
+class Target(_Base):
+    __tablename__ = 'targets'
+
+    id = Column(String, primary_key=True)
+    port = Column(Integer, nullable=False)
+    type = Column(String, nullable=False)
+
 _home = os.path.expanduser("~")
 _db_engine = create_engine("sqlite:///%s" % os.path.join(_home, "jumpi.db"))
 _Base.metadata.create_all(_db_engine, checkfirst=True)

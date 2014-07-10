@@ -1,0 +1,68 @@
+{% extends "base.xhtml" %}
+
+{% block script %}
+<script type="text/javascript">
+$(document).ready(function() {
+    $('.target-edit').hide();
+});
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="list-group">
+{% for target in targets %}
+    <a href="#" class="list-group-item target-link"><strong>{{ target.id }}</strong> <em>(Port: {{ target.port }})</em></a>
+    <div class="list-group-item target-edit">
+    </div>
+{% endfor %}
+</div>
+
+<div class="panel panel-default">
+    <div class="panel-heading">
+        <strong>Add target</strong>
+    </div>
+    <div class="panel-body">
+        <form class="form-horizontal" role="form" method="post" action="{{ url_for('target.add_target') }}">
+            <fieldset>
+                <div class="form-group">
+                    <label for="inputUsername" class="col-lg-2 control-label">Username</label>
+                    <div class="col-lg-10">
+                        <input type="text" class="form-control" id="inputUsername" name="username" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="inputTarget" class="col-lg-2 control-label">Hostname/IP</label>
+                    <div class="col-lg-10">
+                        <input type="text" class="form-control" id="inputTarget" name="target" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="inputPort" class="col-lg-2 control-label">Port</label>
+                    <div class="col-lg-10">
+                        <input type="text" class="form-control" id="inputPort" name="port" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="inputType" class="col-lg-2 control-label">Login Type</label>
+                    <div class="col-lg-10">
+                        <select class="form-control" id="inputType" name="type">
+                            <option value="password">Password</option>
+                            <option value="key">RSA/DSA Key</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-lg-10 col-lg-offset-2">
+                        <textarea class="form-control" rows="3" id="inputKey" name="key"></textarea>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-lg-10 col-lg-offset-2">
+                        <button type="submit" class="btn btn-primary">Add</button>
+                    </div>
+                </div>
+            </fieldset>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -9,5 +9,6 @@ class JumpiConfig(object):
         ("jumpi.web.base.base", "/"),
         ("jumpi.web.user.user", "/user"),
         ("jumpi.web.system.system", "/system"),
+        ("jumpi.web.target.target", "/target")
     ]
 
