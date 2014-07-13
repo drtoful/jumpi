@@ -87,7 +87,7 @@ def add_target():
     agent = Agent()
     if agent.store(username, hostname, key):
         session = Session()
-        session.add(target)
+        session.merge(target)
         session.commit()
 
     return redirect(url_for('target.index'))
