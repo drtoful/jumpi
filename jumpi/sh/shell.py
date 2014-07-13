@@ -3,6 +3,7 @@
 import sys
 import cmd
 import paramiko
+import StringIO
 
 # only works on unix
 import termios
@@ -70,6 +71,8 @@ class JumpiShell(cmd.Cmd):
         username, hostname = target_id.split("@",1)
         client.set_missing_host_key_policy(paramiko.client.WarningPolicy())
         if perm.target.type == "key":
+            keyio = StringIO.StringIO(secret)
+            pkey = paramiko.RSAKey.from_private_key(keyio)
             client.connect(port = perm.target.port, username = username,
                 hostname = hostname, pkey = secret)
         else:
