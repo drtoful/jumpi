@@ -1,6 +1,7 @@
 #-*- coding: utf-8 -*-
 
 import sys
+import os
 
 from jumpi.sh.agent import Agent
 from jumpi.sh.shell import JumpiShell
@@ -27,7 +28,15 @@ def main():
         print >>sys.stderr, reason
         return
 
-    # open up shell
+    intro = """Welcome to JumPi Interactive Shell!
+You're logged in as: %s
+""" % (user.fullname)
+
     shell = JumpiShell(user)
-    shell.cmdloop()
+
+    cmd = os.environ.get('SSH_ORIGINAL_COMMAND', None)
+    if cmd is None:
+        shell.cmdloop(intro=intro)
+    else:
+        shell.onecmd(cmd)
 
