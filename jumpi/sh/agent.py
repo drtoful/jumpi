@@ -30,3 +30,14 @@ class Agent(object):
             return False
         except requests.exceptions.ConnectionError:
             return False
+
+    def store(self, username, hostname, key):
+        try:
+            req = requests.put("%s/store" % self.url,
+                data = json.dumps({'id': username+"@"+hostname, 'key': key}),
+                headers = {'content-type': "application/json; charset=utf-8"})
+            if req.status_code == 200:
+                return True
+            return False
+        except request.exceptions.ConnectionError:
+            return False

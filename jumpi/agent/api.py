@@ -36,9 +36,6 @@ def unlock():
 
     return resp
 
-
-
-
 @app.route("/ping", methods=['GET'])
 def ping():
     return json.dumps({"pong": _vault.is_locked()})
@@ -49,4 +46,13 @@ def get():
 
 @app.route("/store", methods=['PUT'])
 def put():
-    pass
+    resp = Response()
+
+    try:
+        data = request.json
+        _vault.store(data['id'], data['key'])
+        resp.status_code = 200
+    except:
+        resp.status_code = 500
+    return resp
+

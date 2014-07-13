@@ -7,6 +7,7 @@ import re
 from flask import Blueprint, redirect, url_for, request
 from jumpi.web.decorators import templated, jsonr
 from jumpi.db import Session, Target, User, Permission
+from jumpi.sh.agent import Agent
 
 target = Blueprint("target", __name__)
 get = functools.partial(target.route, methods=['GET'])
@@ -83,8 +84,11 @@ def add_target():
         port = int(port)
     )
 
-    session = Session()
-    session.add(target)
-    session.commit()
+    agent = Agent()
+    if agent.store(username, hostname, key):
+        session = Session()
+        session.add(target)
+        session.commit()
 
     return redirect(url_for('target.index'))
+
