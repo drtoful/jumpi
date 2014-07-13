@@ -65,6 +65,20 @@ def save_permissions():
     session.commit()
     return redirect(url_for('target.index'))
 
+@post("/delete")
+def delete_target():
+    dbid = request.form.get("id", None)
+    if dbid is None:
+        return redirect(url_for('target.index'))
+
+    session = Session()
+    target = session.query(Target).filter_by(id=dbid).first()
+    if not target is None:
+        session.delete(target)
+        session.commit()
+
+    return redirect(url_for('target.index'))
+
 @post("/add")
 def add_target():
     username = request.form.get("username", "")
