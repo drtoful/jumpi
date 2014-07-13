@@ -25,7 +25,7 @@ def unlock():
     try:
         data = request.json
         if not _vault.exists():
-            _vault.create(data['passhprase'])
+            _vault.create(data['passphrase'])
         _vault.unlock(data['passphrase'])
         if not _vault.is_locked():
             resp.status_code = 200
