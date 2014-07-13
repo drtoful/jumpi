@@ -11,6 +11,11 @@ class DaemonApp(object):
     def __init__(self):
         self.name = sys.argv[0]
 
+    @classmethod
+    def run(class_):
+        app = class_()
+        return app.main()
+
     def help(self):
         print >>sys.stderr, "usage: %s <start|stop|status>" % (self.name)
 
@@ -64,7 +69,7 @@ class DaemonApp(object):
         return self.status()
 
 
-    def run(self):
+    def main(self):
         parser = optparse.OptionParser()
         (_, args) = parser.parse_args()
 
