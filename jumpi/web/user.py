@@ -34,7 +34,7 @@ def _recompute_authorized_keys():
         for key in keys:
             print >>fp, """command="jumpi-sh %d",""" % (key.id) \
                 +"""no-port-forwarding,no-X11-forwarding,""" \
-                +"""no-agent-forwarding,no-pty %s""" % (key.ssh_key)
+                +"""no-agent-forwarding %s""" % (key.ssh_key)
 
     os.chmod(file, 0600)
 
