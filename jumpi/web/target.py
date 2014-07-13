@@ -5,8 +5,8 @@ import SecureString
 import re
 
 from flask import Blueprint, redirect, url_for, request
-from jumpi.web.decorators import templated
-from jumpi.db import Session, Target
+from jumpi.web.decorators import templated, jsonr
+from jumpi.db import Session, Target, User
 
 target = Blueprint("target", __name__)
 get = functools.partial(target.route, methods=['GET'])
@@ -25,8 +25,25 @@ _port_re = re.compile("[0-9]+")
 def index():
     session = Session()
     targets = session.query(Target).order_by(Target.id)
+    users = session.query(User).all()
 
-    return dict(targets = targets)
+    return dict(targets = targets, users=users)
+
+@get("/permissions")
+@jsonr()
+def permissions():
+
+    try:
+        session = Session()
+        target = session.query(Target).filter_by(id=request.args['dbid']).first()
+
+        permissions = [{'id': x.id, 'text': x.fullname}
+            for x in target.permissions]
+        return dict(permissions=permissions)
+    except:
+        pass
+
+    return dict()
 
 @post("/add")
 def add_target():
