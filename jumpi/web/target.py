@@ -6,7 +6,7 @@ import re
 
 from flask import Blueprint, redirect, url_for, request
 from jumpi.web.decorators import templated, jsonr
-from jumpi.db import Session, Target, User
+from jumpi.db import Session, Target, User, Permission
 
 target = Blueprint("target", __name__)
 get = functools.partial(target.route, methods=['GET'])
@@ -31,19 +31,38 @@ def index():
 
 @get("/permissions")
 @jsonr()
-def permissions():
-
+def get_permissions():
     try:
         session = Session()
         target = session.query(Target).filter_by(id=request.args['dbid']).first()
 
-        permissions = [{'id': x.id, 'text': x.fullname}
+
+        permissions = [{'id': x.user.id, 'text': x.user.fullname}
             for x in target.permissions]
         return dict(permissions=permissions)
     except:
-        pass
+        print "error occured!"
 
     return dict()
+
+@post("/permissions")
+def save_permissions():
+    dbid = request.form.get("dbid", None)
+    if dbid is None:
+        return redirect(url_for('target.index'))
+
+    permissions = request.form.getlist("perms[]")
+    session = Session()
+
+    perms = session.query(Permission).filter_by(target_id=dbid)
+    map(session.delete, perms)
+    print permissions
+    for id in permissions:
+        perm = Permission(target_id=dbid, user_id=id)
+        session.add(perm)
+
+    session.commit()
+    return redirect(url_for('target.index'))
 
 @post("/add")
 def add_target():

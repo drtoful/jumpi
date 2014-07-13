@@ -5,15 +5,27 @@
 $(document).ready(function() {
     $('.target-edit').hide();
     $('.target-link').click(function() {
-        data = {dbid: $(this).attr("dbid")}
-        $.getJSON("{{ url_for('target.permissions') }}", data, function(data) {
-            $.each(data.permissions, function(index, value) {
-                $('<option/>').val(value.id).text(value.text).appendTo("#used-"+$(this).attr("index"));
-                $("#avail-"+$(this).attr("index")+" option[value='"+value.id+"']").remove();
+        var data = {dbid: $(this).attr("dbid")};
+        var index = $(this).attr("index");
+        $.getJSON("{{ url_for('target.get_permissions') }}", data, function(data) {
+            $.each(data.permissions, function(i, value) {
+                $('<option/>').val(value.id).text(value.text).appendTo("#used-"+index);
+                $("#avail-"+index+" option[value='"+value.id+"']").remove();
             });
         });
 
         $(this).next().toggle();
+    });
+
+    $('.save-btn').click(function() {
+        var perms = [];
+        $("#used-"+$(this).attr("index")+" option").each(function() {
+            perms.push($(this).val());
+        });
+        var data = {dbid: $(this).attr("dbid"), perms: perms}
+        $.post("{{ url_for('target.save_permissions') }}", data, function(data) {
+            window.location.href = "{{ url_for('target.index') }}";
+        });
     });
 
     $('.add-btn').click(function() {
@@ -35,7 +47,7 @@ $(document).ready(function() {
 <a href="#" class="list-group-item target-link" dbid="{{ target.id }}" index="{{ loop.index }}"><strong>{{ target.id }}</strong> <em>(Port: {{ target.port }})</em></a>
     <div class="list-group-item target-edit">
         <button type="button" class="btn btn-danger btn-xs pull-right" dbid="{{ target.id }}">delete</button>
-        <button type="button" class="btn btn-success btn-xs pull-right" style="margin-right: 7px;" dbid="{{ target.id }}" index="{{ loop.index }}">save</button>
+        <button type="button" class="btn btn-success btn-xs pull-right save-btn" style="margin-right: 7px;" dbid="{{ target.id }}" index="{{ loop.index }}">save</button>
         <form class="form-inline" role="form">
             <h4>User permissions</h4>
             <div class="form-group">
