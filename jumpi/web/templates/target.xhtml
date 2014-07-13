@@ -3,16 +3,23 @@
 {% block script %}
 <script type="text/javascript">
 $(document).ready(function() {
+    var loader = {}
+
     $('.target-edit').hide();
     $('.target-link').click(function() {
         var data = {dbid: $(this).attr("dbid")};
         var index = $(this).attr("index");
-        $.getJSON("{{ url_for('target.get_permissions') }}", data, function(data) {
-            $.each(data.permissions, function(i, value) {
-                $('<option/>').val(value.id).text(value.text).appendTo("#used-"+index);
-                $("#avail-"+index+" option[value='"+value.id+"']").remove();
+
+        if(loader[index] != "true") {
+            $.getJSON("{{ url_for('target.get_permissions') }}", data, function(data) {
+                $("#used-"+index).empty();
+                $.each(data.permissions, function(i, value) {
+                    $('<option/>').val(value.id).text(value.text).appendTo("#used-"+index);
+                    $("#avail-"+index+" option[value='"+value.id+"']").remove();
+                });
+                loader[index] = "true";
             });
-        });
+        }
 
         $(this).next().toggle();
     });
