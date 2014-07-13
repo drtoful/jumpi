@@ -41,3 +41,14 @@ class Agent(object):
             return False
         except request.exceptions.ConnectionError:
             return False
+
+    def retrieve(self, id):
+        try:
+            req = requests.get("%s/retrieve" % self.url,
+                data = json.dumps({'id': id}),
+                headers = {'content-type': "application/json; charset=utf-8"})
+            if req.status_code == 200:
+                return req.text
+            return None
+        except request.exceptions.ConnectionError:
+            return None

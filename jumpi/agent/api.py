@@ -42,7 +42,17 @@ def ping():
 
 @app.route("/retrieve", methods=['GET'])
 def get():
-    pass
+    resp = Response()
+
+    try:
+        data = request.json
+        secret = _vault.retrieve(data['id'])
+        resp.status_code = 200
+        resp.data = str(secret)
+    except:
+        resp.status_code = 500
+    return resp
+
 
 @app.route("/store", methods=['PUT'])
 def put():
