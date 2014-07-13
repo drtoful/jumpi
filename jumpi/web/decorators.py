@@ -1,6 +1,9 @@
 #-*- coding: utf-8 -*-
 
+import json
+
 from flask import render_template, request, session, redirect, url_for, app
+from flask import make_response
 from functools import wraps
 
 def templated(template):
@@ -29,4 +32,19 @@ def templated(template):
         return template_function
     return decorator
 
+def jsonr():
+    def decorator(f):
+        @wraps(f)
+        def json_function(*args, **kwargs):
+            context = f(*args, **kwargs)
+            if not isinstance(context, dict):
+                return context
 
+            response = make_response(json.dumps(context))
+            response.headers['Content-Type'] = "application/json"
+
+            return response
+
+
+        return json_function
+    return decorator
