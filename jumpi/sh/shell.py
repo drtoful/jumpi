@@ -74,7 +74,7 @@ class JumpiShell(cmd.Cmd):
             keyio = StringIO.StringIO(secret)
             pkey = paramiko.RSAKey.from_private_key(keyio)
             client.connect(port = perm.target.port, username = username,
-                hostname = hostname, pkey = secret)
+                hostname = hostname, pkey = pkey)
         else:
             client.connect(port = perm.target.port, username = username,
                 hostname = hostname, password = secret)
