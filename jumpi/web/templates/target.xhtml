@@ -5,6 +5,11 @@
 $(document).ready(function() {
     var loader = {}
 
+    $('#add_target_form').hide();
+    $('#add_target_button').click(function() {
+        $('#add_target_form').toggle();
+    });
+
     $('.target-edit').hide();
     $('.target-link').click(function() {
         var data = {dbid: $(this).attr("dbid")};
@@ -58,36 +63,47 @@ $(document).ready(function() {
 {% endblock %}
 
 {% block content %}
-<div class="list-group">
-{% for target in targets %}
-<a href="#" class="list-group-item target-link" dbid="{{ target.id }}" index="{{ loop.index }}"><strong>{{ target.id }}</strong> <em>(Port: {{ target.port }})</em></a>
-    <div class="list-group-item target-edit">
-        <button type="button" class="btn btn-danger btn-xs pull-right del-btn" dbid="{{ target.id }}">delete</button>
-        <button type="button" class="btn btn-success btn-xs pull-right save-btn" style="margin-right: 7px;" dbid="{{ target.id }}" index="{{ loop.index }}">save</button>
-        <form class="form-inline" role="form">
-            <h4>User permissions</h4>
-            <div class="form-group">
-                <select class="form-control" multiple="multiple" id="avail-{{ loop.index }}">
-                    {% for user in users %}
-                    <option value="{{ user.id }}">{{ user.fullname }}</option>
-                    {% endfor%}
-                </select>
-            </div>
-            <div class="form-group">
-                <button type="button" class="btn btn-default btn-xs add-btn" index="{{ loop.index }}">&gt;</button><br /><br />
-                <button type="button" class="btn btn-default btn-xs sub-btn" index="{{ loop.index }}">&lt;</button>
-            </div>
-            <div class="form-group">
-                <select class="form-control" multiple="multiple" id="used-{{ loop.index }}">
-                </select>
-            </div>
-        </form>
-        &nbsp;
-    </div>
-{% endfor %}
-</div>
 
 <div class="panel panel-default">
+    <div class="panel-heading">
+        <strong>Targets</strong>
+    </div>
+    <div class="panel-body">
+        <p><small>This is a list of targets, hosts that are accessible through this JumPi. You can edit the permissions by clicking on a target to open the configuration for that target.</small></p>
+        <button type="button" class="btn btn-success btn-xs" id="add_target_button">Add target</button>
+    </div>
+
+    <div class="list-group">
+    {% for target in targets %}
+        <a href="#" class="list-group-item target-link" dbid="{{ target.id }}" index="{{ loop.index }}"><strong>{{ target.id }}</strong> <em>(Port: {{ target.port }})</em></a>
+        <div class="list-group-item target-edit">
+            <button type="button" class="btn btn-danger btn-xs pull-right del-btn" dbid="{{ target.id }}">delete</button>
+            <button type="button" class="btn btn-success btn-xs pull-right save-btn" style="margin-right: 7px;" dbid="{{ target.id }}" index="{{ loop.index }}">save</button>
+            <form class="form-inline" role="form">
+                <h4>User permissions</h4>
+                <div class="form-group">
+                    <select class="form-control" multiple="multiple" id="avail-{{ loop.index }}">
+                        {% for user in users %}
+                        <option value="{{ user.id }}">{{ user.fullname }}</option>
+                        {% endfor%}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <button type="button" class="btn btn-default btn-xs add-btn" index="{{ loop.index }}">&gt;</button><br /><br />
+                    <button type="button" class="btn btn-default btn-xs sub-btn" index="{{ loop.index }}">&lt;</button>
+                </div>
+                <div class="form-group">
+                    <select class="form-control" multiple="multiple" id="used-{{ loop.index }}">
+                    </select>
+                </div>
+            </form>
+            &nbsp;
+        </div>
+    {% endfor %}
+    </div>
+</div>
+
+<div class="panel panel-default" id="add_target_form">
     <div class="panel-heading">
         <strong>Add target</strong>
     </div>
