@@ -2,9 +2,23 @@
 
 import requests
 import json
+import os
+import ConfigParser
+
 
 class Agent(object):
     def __init__(self, host="127.0.0.1", port=42000):
+        file = os.path.expanduser("~")
+        file = os.path.join(file, "jumpi-agent.cfg")
+        if os.path.isfile(file):
+            parser = ConfigParser.SafeConfigParser()
+            parser.read(file)
+
+            if parser.has_option("agent", "host"):
+                host = parser.get("agent", "host")
+            if parser.has_option("agent", "port"):
+                port = parser.getint("agent", "port")
+
         self.url = "http://%s:%d" % (host, port)
 
     def ping(self):
