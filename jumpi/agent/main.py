@@ -3,6 +3,7 @@
 import os
 
 from jumpi.agent.api import app
+from jumpi.agent import log
 from jumpi.app import DaemonApp
 
 class Main(DaemonApp):
@@ -12,5 +13,6 @@ class Main(DaemonApp):
         self.pidfile = os.path.join(home, "jumpi-agent.pid")
 
     def start(self):
+        log.info("starting jumpi agent")
         app.run(host="127.0.0.1", port=42000)
 
