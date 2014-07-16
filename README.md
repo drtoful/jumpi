@@ -20,15 +20,15 @@ will only work with private keys.
 
 It's discouraged to use an existing user.
 
-   adduser --system --shell /bin/sh --gecos 'ssh jumphost' \
-   --group --disabled-password --home /home/jumpi jumpi
+    adduser --system --shell /bin/sh --gecos 'ssh jumphost' \
+    --group --disabled-password --home /home/jumpi jumpi
 
 Next up, we will start the daemons, that are responsible for communicating
 between each component and to present a nice web-ui.
 
-   su - jump
-   jumpi-web start
-   jumpi-agent start
+    su - jump
+    jumpi-web start
+    jumpi-agent start
 
 The Web-UI is available under 127.0.0.1:8080, so you will need to use
 a SSH tunnel to connect to it.
@@ -53,10 +53,9 @@ them, on which port the agent can be accessed. Do this, by creating a file named
 `jumpi-agent.cfg` in the home directory of the previously created user. In it
 you can specify the agent host and port:
 
-
-   [agent]
-   host = 127.0.0.1
-   port = 42000
+    [agent]
+    host = 127.0.0.1
+    port = 42000
 
 ## Configuration
 
