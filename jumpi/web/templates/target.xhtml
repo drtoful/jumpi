@@ -75,7 +75,7 @@ $(document).ready(function() {
 
     <div class="list-group">
     {% for target in targets %}
-        <a href="#" class="list-group-item target-link" dbid="{{ target.id }}" index="{{ loop.index }}"><strong>{{ target.id }}</strong> <em>(Port: {{ target.port }})</em></a>
+    <a href="#" class="list-group-item target-link" dbid="{{ target.id }}" index="{{ loop.index }}"><span class="fa-stack"><i class="fa fa-square fa-stack-2x"></i><i class="fa fa-terminal fa-stack-1x fa-inverse"></i></span>&nbsp;&nbsp;<strong>{{ target.id }}</strong> <em>(Port: {{ target.port }})</em></a>
         <div class="list-group-item target-edit">
             <button type="button" class="btn btn-danger btn-xs pull-right del-btn" dbid="{{ target.id }}">delete</button>
             <button type="button" class="btn btn-success btn-xs pull-right save-btn" style="margin-right: 7px;" dbid="{{ target.id }}" index="{{ loop.index }}">save</button>
