@@ -6,6 +6,7 @@ import os
 from jumpi.sh.agent import Agent
 from jumpi.sh.shell import JumpiShell
 from jumpi.db import Session, User
+from jumpi.sh import log
 
 
 def main():
@@ -25,6 +26,8 @@ def main():
     a = Agent()
     (resp, reason) = a.ping()
     if not resp:
+        log.error("user='%s' tried to log in, but agent is locked" %(
+            user.fullname))
         print >>sys.stderr, reason
         return
 
