@@ -30,6 +30,7 @@
             <div class="list-group">
                 <a href="{{ url_for('base.index') }}" class="list-group-item active">JumPi&nbsp;&nbsp;&nbsp;<i class="fa fa-fw {% if agent_unlock %}fa-unlock{% else %}fa-lock{% endif %}"></i></a>
                 <a href="{{ url_for('target.index') }}" class="list-group-item">Targets</a>
+				<a href="{{ url_for('tunnel.index') }}" class="list-group-item">Tunnels</a>
                 <a href="{{ url_for('user.index') }}" class="list-group-item">User Keys</a>
                 <a href="{{ url_for('system.index') }}" class="list-group-item">System</a>
             </div>

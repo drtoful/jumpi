@@ -42,6 +42,27 @@ class Permission(_Base):
     user = relationship("User", backref=backref('users', order_by=id))
     target = relationship("Target", backref=backref('targets', order_by=id))
 
+class Tunnel(_Base):
+    __tablename__ = 'tunnels'
+
+    id = Column(Integer, Sequence('tunnel_id_seq'), primary_key=True)
+    destination = Column(String, nullable=False)
+    port = Column(Integer, nullable=False)
+
+    permissions = relationship("TunnelPermission",
+        order_by="TunnelPermission.id", cascade="all,delete",
+        backref="user_tunnels")
+
+class TunnelPermission(_Base):
+    __tablename__ = 'tunnel_permissions'
+
+    id = Column(Integer, Sequence('tunnel_permission_seq'), primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    tunnel_id = Column(Integer, ForeignKey("tunnels.id"))
+
+    user = relationship("User", backref=backref('user_tunnels', order_by=id))
+    tunnel = relationship("Tunnel", backref=backref('tunnels', order_by=id))
+
 _home = os.path.expanduser("~")
 _db_engine = create_engine("sqlite:///%s" % os.path.join(_home, "jumpi.db"))
 _Base.metadata.create_all(_db_engine, checkfirst=True)
