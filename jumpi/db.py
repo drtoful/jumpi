@@ -19,8 +19,12 @@ class User(_Base):
     time_added = Column(DateTime(timezone="UTC"), nullable=False)
     time_lastaccess = Column(DateTime(timezone="UTC"))
 
-    permissions = relationship("TargetPermission",
-        order_by="TargetPermission.id", cascade="all,delete", backref="user_targets")
+    target_permissions = relationship("TargetPermission",
+        order_by="TargetPermission.id", cascade="all,delete",
+        backref="user_targets")
+    tunnel_permissions = relationship("TunnelPermission",
+        order_by="TunnelPermission.id", cascade="all,delete",
+        backref="user_tunnels")
 
 class Target(_Base):
     __tablename__ = 'targets'
@@ -51,7 +55,7 @@ class Tunnel(_Base):
 
     permissions = relationship("TunnelPermission",
         order_by="TunnelPermission.id", cascade="all,delete",
-        backref="user_tunnels")
+        backref="tunnels")
 
 class TunnelPermission(_Base):
     __tablename__ = 'tunnel_permissions'
