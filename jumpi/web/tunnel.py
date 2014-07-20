@@ -6,6 +6,7 @@ import re
 
 from flask import Blueprint, redirect, url_for, request
 from jumpi.web.decorators import templated, jsonr
+from jumpi.web.user import _recompute_authorized_keys
 from jumpi.db import Session, Tunnel, User, TunnelPermission
 from jumpi.sh.agent import Agent
 
@@ -55,6 +56,7 @@ def save_permissions():
     print permissions
     for id in permissions:
         perm = TunnelPermission(tunnel_id=dbid, user_id=id)
+        _recompute_authorized_keys()
         session.add(perm)
 
     session.commit()
