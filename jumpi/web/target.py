@@ -6,7 +6,7 @@ import re
 
 from flask import Blueprint, redirect, url_for, request
 from jumpi.web.decorators import templated, jsonr
-from jumpi.db import Session, Target, User, Permission
+from jumpi.db import Session, Target, User, TargetPermission
 from jumpi.sh.agent import Agent
 
 target = Blueprint("target", __name__)
@@ -55,11 +55,11 @@ def save_permissions():
     permissions = request.form.getlist("perms[]")
     session = Session()
 
-    perms = session.query(Permission).filter_by(target_id=dbid)
+    perms = session.query(TargetPermission).filter_by(target_id=dbid)
     map(session.delete, perms)
     print permissions
     for id in permissions:
-        perm = Permission(target_id=dbid, user_id=id)
+        perm = TargetPermission(target_id=dbid, user_id=id)
         session.add(perm)
 
     session.commit()
