@@ -75,7 +75,7 @@ $(document).ready(function() {
 
     <div class="list-group">
     {% for tunnel in tunnels %}
-    <a href="#" class="list-group-item tunnel-link" dbid="{{ tunnel.id }}" index="{{ loop.index }}"><span class="fa fa-exchange"></span>&nbsp;&nbsp;<strong>{{ tunnel.destination }}:{{ tunnel.port }}</strong></a>
+    <a href="#" class="list-group-item tunnel-link" dbid="{{ tunnel.id }}" index="{{ loop.index }}"><span class="fa-stack"><i class="fa fa-exchange fa-stack-1x"></i></span>&nbsp;&nbsp;<strong>{{ tunnel.destination }}:{{ tunnel.port }}</strong></a>
         <div class="list-group-item tunnel-edit">
             <button type="button" class="btn btn-danger btn-xs pull-right del-btn" dbid="{{ tunnel.id }}">delete</button>
             <button type="button" class="btn btn-success btn-xs pull-right save-btn" style="margin-right: 7px;" dbid="{{ tunnel.id }}" index="{{ loop.index }}">save</button>
