@@ -9,7 +9,7 @@ import StringIO
 import termios
 import tty
 
-from jumpi.db import Session, Permission
+from jumpi.db import Session, TargetPermission
 from jumpi.sh.agent import Agent
 from jumpi.sh import log, get_session_id
 
@@ -19,7 +19,7 @@ class JumpiShell(cmd.Cmd):
 
         self.session = get_session_id()
         self.user = user
-        self.systems = [x.target_id for x in user.permissions]
+        self.systems = [x.target_id for x in user.target_permissions]
         log.info("session=%s user='%s' id=%s - session opened",
             self.session, self.user.fullname, self.user.id)
 
@@ -56,7 +56,7 @@ class JumpiShell(cmd.Cmd):
     def do_ssh(self, line):
         target_id = line.split(" ", 1)[0].strip()
         session = Session()
-        perm = session.query(Permission).filter_by(
+        perm = session.query(TargetPermission).filter_by(
             user_id=self.user.id, target_id=target_id).first()
 
         if perm is None:
