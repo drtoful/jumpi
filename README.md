@@ -8,8 +8,26 @@ should run on any Linux system.
 
 ## Installing
 
-   aptitude install build-essential python-dev libffi-dev
-   python setup.py install
+    python setup.py install
+
+### Dependencies
+
+The following dependencies are automatically resolved by using the 
+above command
+
+* [flask](http://flask.pocoo.org/) >= 0.9
+* [python-daemon](https://pypi.python.org/pypi/python-daemon/) >= 1.6
+* [sqlalchemy](http://www.sqlalchemy.org/) >= 0.9
+* [requests](http://docs.python-requests.org/en/latest/) >= 2.2.1
+* [paramiko](http://www.paramiko.org/) >= 1.14
+* [pyvault](https://github.com/drtoful/pyvault) >= 0.1
+
+To successfully build and install the dependencies you might install
+additional packages using your distributions package manager. For the
+Raspberry Pi you can resolve this, by issuing the following command
+(when using a raspbian based distribution:
+
+    aptitude install build-essential python-dev libffi-dev
 
 ## Setting up
 
