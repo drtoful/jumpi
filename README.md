@@ -49,7 +49,7 @@ between each component and to present a nice web-ui.
     jumpi-agent start
 
 The Web-UI is available under 127.0.0.1:8080, so you will need to use
-a SSH tunnel to connect to it.
+a SSH tunnel to connect to it. The default username and password is "admin".
 
 ### Alternative
 

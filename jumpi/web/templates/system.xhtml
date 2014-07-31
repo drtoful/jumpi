@@ -44,4 +44,40 @@
         </form>
     </div>
 </div>
+
+<div class="panel panel-default" id="changepw_form">
+    <div class="panel-heading">
+        <strong>Change password</strong>
+    </div>
+    <div class="panel-body">
+        <p><small>Change the JumPi Web Password. On successful change, you will have to reauthenticate with the new password.</small></p>
+        <form method="post" action="{{ url_for('system.changepw') }}" role="form" class="form-horizontal">
+            <fieldset>
+                <div class="form-group">
+                    <label for="inputPasswordOld" class="col-lg-2 control-label">Old Password</label>
+                    <div class="col-lg-10">
+                        <input type="password" id="inputPasswordOld" name="pw_old" class="form-control" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="inputPasswordNew1" class="col-lg-2 control-label">New Password</label>
+                    <div class="col-lg-10">
+                        <input type="password" id="inputPasswordNew1" name="pw_new1" class="form-control" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="inputPasswordNew2" class="col-lg-2 control-label">Repeat</label>
+                    <div class="col-lg-10">
+                        <input type="password" id="inputPasswordNew2" name="pw_new2" class="form-control" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-lg-10 col-lg-offset-2">
+                        <button type="submit" class="btn btn-primary">Save</button>
+                    </div>
+                </div>
+            </fieldset>
+        </form>
+    </div>
+</div>
 {% endblock %}
