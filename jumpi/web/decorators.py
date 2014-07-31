@@ -1,22 +1,28 @@
 #-*- coding: utf-8 -*-
 
 import json
+import bcrypt
 
 from flask import render_template, request, session, redirect, url_for, app
 from flask import make_response
 from functools import wraps
 from jumpi.sh.agent import Agent
+from jumpi.web.utils import WebPass
 
 def authenticated(f):
     @wraps(f)
     def decorator(*args, **kwargs):
+        auth = request.authorization
+        def check_auth():
+            checker = WebPass()
+            return auth.username == "admin" and checker.verify(auth.password)
+
         def authenticate():
-            response = make_response('JumPi Login', 401)
+            response = make_response('Authentication required!', 401)
             response.headers['WWW-Authenticate'] = "Basic realm=\"JumPi\""
             return response
 
-        auth = request.authorization
-        if not auth:
+        if not auth or not check_auth():
             return authenticate()
 
         return f(*args, **kwargs)
