@@ -7,6 +7,21 @@ from flask import make_response
 from functools import wraps
 from jumpi.sh.agent import Agent
 
+def authenticated(f):
+    @wraps(f)
+    def decorator(*args, **kwargs):
+        def authenticate():
+            response = make_response('JumPi Login', 401)
+            response.headers['WWW-Authenticate'] = "Basic realm=\"JumPi\""
+            return response
+
+        auth = request.authorization
+        if not auth:
+            return authenticate()
+
+        return f(*args, **kwargs)
+    return decorator
+
 def templated(template):
     def decorator(f):
         @wraps(f)

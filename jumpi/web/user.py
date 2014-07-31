@@ -8,7 +8,7 @@ import datetime
 import base64
 
 from flask import Blueprint, redirect, url_for, request
-from jumpi.web.decorators import templated
+from jumpi.web.decorators import templated, authenticated
 from jumpi.db import Session, User
 
 user = Blueprint("user", __name__)
@@ -45,6 +45,7 @@ def _recompute_authorized_keys():
     os.chmod(file, 0600)
 
 @get("/")
+@authenticated
 @templated("user.xhtml")
 def index():
     session = Session()
@@ -55,6 +56,7 @@ def index():
     )
 
 @post("/add")
+@authenticated
 def add_key():
     def _calc_fingerprint(line):
         key = base64.b64decode(line.strip().split()[1].encode('ascii'))
@@ -82,6 +84,7 @@ def add_key():
     return redirect(url_for('user.index'))
 
 @post("/delete")
+@authenticated
 def delete_key():
     id = request.form.get("id","")
     if _id_re.match(id) is None:

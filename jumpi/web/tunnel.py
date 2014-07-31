@@ -5,7 +5,7 @@ import SecureString
 import re
 
 from flask import Blueprint, redirect, url_for, request
-from jumpi.web.decorators import templated, jsonr
+from jumpi.web.decorators import templated, jsonr, authenticated
 from jumpi.web.user import _recompute_authorized_keys
 from jumpi.db import Session, Tunnel, User, TunnelPermission
 from jumpi.sh.agent import Agent
@@ -19,6 +19,7 @@ _ip_re = re.compile("[0-9\.]+")
 _port_re = re.compile("[0-9]+")
 
 @get("/")
+@authenticated
 @templated("tunnel.xhtml")
 def index():
     session = Session()
@@ -28,6 +29,7 @@ def index():
     return dict(tunnels = tunnels, users=users)
 
 @get("/permissions")
+@authenticated
 @jsonr()
 def get_permissions():
     try:
@@ -43,6 +45,7 @@ def get_permissions():
     return dict()
 
 @post("/permissions")
+@authenticated
 def save_permissions():
     dbid = request.form.get("dbid", None)
     if dbid is None:
@@ -63,6 +66,7 @@ def save_permissions():
     return redirect(url_for('tunnel.index'))
 
 @post("/delete")
+@authenticated
 def delete_tunnel():
     dbid = request.form.get("id", None)
     if dbid is None:
@@ -77,6 +81,7 @@ def delete_tunnel():
     return redirect(url_for('tunnel.index'))
 
 @post("/add")
+@authenticated
 def add_tunnel():
     destination = request.form.get("destination", "")
     port = request.form.get("port", "")

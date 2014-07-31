@@ -5,7 +5,7 @@ import SecureString
 import re
 
 from flask import Blueprint, redirect, url_for, request
-from jumpi.web.decorators import templated, jsonr
+from jumpi.web.decorators import templated, jsonr, authenticated
 from jumpi.db import Session, Target, User, TargetPermission
 from jumpi.sh.agent import Agent
 
@@ -22,6 +22,7 @@ _ip_re = re.compile("[0-9\.]+")
 _port_re = re.compile("[0-9]+")
 
 @get("/")
+@authenticated
 @templated("target.xhtml")
 def index():
     session = Session()
@@ -31,6 +32,7 @@ def index():
     return dict(targets = targets, users=users)
 
 @get("/permissions")
+@authenticated
 @jsonr()
 def get_permissions():
     try:
@@ -47,6 +49,7 @@ def get_permissions():
     return dict()
 
 @post("/permissions")
+@authenticated
 def save_permissions():
     dbid = request.form.get("dbid", None)
     if dbid is None:
@@ -66,6 +69,7 @@ def save_permissions():
     return redirect(url_for('target.index'))
 
 @post("/delete")
+@authenticated
 def delete_target():
     dbid = request.form.get("id", None)
     if dbid is None:
@@ -80,6 +84,7 @@ def delete_target():
     return redirect(url_for('target.index'))
 
 @post("/add")
+@authenticated
 def add_target():
     username = request.form.get("username", "")
     hostname = request.form.get("target", "")

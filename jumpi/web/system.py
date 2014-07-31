@@ -4,7 +4,7 @@ import functools
 import SecureString
 
 from flask import Blueprint, redirect, url_for, request
-from jumpi.web.decorators import templated
+from jumpi.web.decorators import templated, authenticated
 from jumpi.sh.agent import Agent
 
 system = Blueprint("system", __name__)
@@ -12,6 +12,7 @@ get = functools.partial(system.route, methods=['GET'])
 post = functools.partial(system.route, methods=['POST'])
 
 @get("/")
+@authenticated
 @templated("system.xhtml")
 def index():
     agent = Agent()
@@ -20,6 +21,7 @@ def index():
     )
 
 @post("/unlock")
+@authenticated
 def unlock():
     agent = Agent()
 
