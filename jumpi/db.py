@@ -39,7 +39,7 @@ class Target(_Base):
 class TargetPermission(_Base):
     __tablename__ = 'target_permissions'
 
-    id = Column(Integer, Sequence('target_id_seq'), primary_key=True)
+    id = Column(Integer, Sequence('target_permission_seq'), primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     target_id = Column(String, ForeignKey("targets.id"))
 
