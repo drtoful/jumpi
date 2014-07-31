@@ -27,7 +27,7 @@ additional packages using your distributions package manager. For the
 Raspberry Pi you can resolve this, by issuing the following command
 (when using a raspbian based distribution:
 
-    aptitude install build-essential python-dev libffi-dev
+    aptitude install build-essential python-dev libffi-dev libssl-dev
 
 ## Setting up
 

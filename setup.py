@@ -8,13 +8,15 @@ setup(
     packages=['jumpi', 'jumpi.agent', 'jumpi.web', 'jumpi.sh'],
     package_dir={'jumpi': 'jumpi'},
     package_data={'jumpi': ['web/templates/*', 'web/static/*.css']},
+    include_package_data=True,
+    zip_safe=False,
     install_requires=[
         'flask >= 0.9',
         'python-daemon >= 1.6',
         'sqlalchemy >= 0.9',
         'requests >= 2.2.1',
         'paramiko >= 1.14',
-        'pyvault>=0.1git'
+        'pyvault>=0.1'
     ],
     dependency_links=[
         'https://github.com/drtoful/pyvault/tarball/0.1#egg=pyvault-0.1git'
