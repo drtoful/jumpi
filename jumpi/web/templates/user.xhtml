@@ -35,7 +35,7 @@
             <button type="button" class="btn btn-danger btn-xs pull-right key_delete_button" dbid="{{ user.id }}">delete</button>
             <strong>{{ user.fullname }}</strong>
             <p>{{ user.ssh_fingerprint }}</p>
-            <p>Added <time>{{ user.time_added }}</time>{% if user.time_lastaccess %} - Last used <time>{{ user.time_lastaccess }}</time>{% endif %}<p>
+            <p>Added <time>{{ user.time_added }}</time>{% if user.time_lastaccess %} - Last used <a href="{{ url_for('user.recordings', id=user.id) }}"><time>{{ user.time_lastaccess }}</time></a>{% endif %}<p>
         </div>
     {% endfor %}
     </div>

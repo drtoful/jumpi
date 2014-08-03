@@ -1,0 +1,14 @@
+.terminal-container{
+ background: #666;
+ color: #efefef;
+ font-size: 12px;
+ padding: 7px;
+ display: table-cell;
+ font-family: 'Droid Sans Mono', Courier, monospace;
+}
+
+.terminal-line{
+ white-space: pre;
+ padding: 0;
+ margin: 0;
+}

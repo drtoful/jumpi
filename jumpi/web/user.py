@@ -100,3 +100,13 @@ def delete_key():
 
     return redirect(url_for('user.index'))
 
+@get("/<int:id>/recordings")
+@authenticated
+@templated("recordings.xhtml")
+def recordings(id):
+    session = Session()
+    user = session.query(User).filter_by(id=id).first()
+    if user is None:
+        return redirect(url_for('user.index'))
+
+    return dict(user=user)
