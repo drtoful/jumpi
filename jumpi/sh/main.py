@@ -44,6 +44,7 @@ You're logged in as: %s
     recorder = Recorder()
 
     cmd = os.environ.get('SSH_ORIGINAL_COMMAND', None)
+    start = datetime.datetime.now()
     if cmd is None:
         recorder.record(shell.cmdloop, intro=intro)
     else:
@@ -56,7 +57,7 @@ You're logged in as: %s
         duration = recorder.recording.duration,
         width = recorder.recording.columns,
         height = recorder.recording.lines,
-        time = datetime.datetime.now()
+        time = start
     )
     if a.store_data(str(user.id)+"@"+shell.session, str(recorder.recording)):
         session.add(recording)
