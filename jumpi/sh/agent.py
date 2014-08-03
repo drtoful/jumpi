@@ -45,16 +45,19 @@ class Agent(object):
         except requests.exceptions.ConnectionError:
             return False
 
-    def store(self, username, hostname, key):
+    def store_data(self, id, data):
         try:
             req = requests.put("%s/store" % self.url,
-                data = json.dumps({'id': username+"@"+hostname, 'key': key}),
+                data = json.dumps({'id': id, 'key': data}),
                 headers = {'content-type': "application/json; charset=utf-8"})
             if req.status_code == 200:
                 return True
             return False
-        except request.exceptions.ConnectionError:
+        except requests.exceptions.ConnectionError:
             return False
+
+    def store(self, username, hostname, key):
+        return store_data(username+"@"+hostname, key)
 
     def retrieve(self, id):
         try:

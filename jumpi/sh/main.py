@@ -6,9 +6,9 @@ import datetime
 
 from jumpi.sh.agent import Agent
 from jumpi.sh.shell import JumpiShell
-from jumpi.db import Session, User
+from jumpi.db import Session, User, Recording
 from jumpi.sh import log
-
+from jumpi.sh.recorder import Recorder
 
 def main():
     # check argument length
@@ -41,10 +41,19 @@ You're logged in as: %s
 """ % (user.fullname)
 
     shell = JumpiShell(user)
+    recorder = Recorder()
 
     cmd = os.environ.get('SSH_ORIGINAL_COMMAND', None)
     if cmd is None:
-        shell.cmdloop(intro=intro)
+        recorder.record(shell.cmdloop, intro=intro)
     else:
-        shell.onecmd(cmd)
+        recorder.record(shell.onecmd, cmd)
 
+    # save the recording to the users recordings list
+    recording = Recording(
+        user_id = user.id,
+        session_id = shell.session
+    )
+    if a.store_data(str(user.id)+"@"+shell.session, str(recorder.recording)):
+        session.add(recording)
+        session.commit()

@@ -25,6 +25,9 @@ class User(_Base):
     tunnel_permissions = relationship("TunnelPermission",
         order_by="TunnelPermission.id", cascade="all,delete",
         backref="user_tunnels")
+    recordings = relationship("Recording",
+        order_by="Recording.id", cascade="all, delete",
+        backref="user_recordings")
 
 class Target(_Base):
     __tablename__ = 'targets'
@@ -35,6 +38,15 @@ class Target(_Base):
 
     permissions = relationship("TargetPermission",
         order_by="TargetPermission.id", cascade="all,delete", backref="targets")
+
+class Recording(_Base):
+    __tablename__ = 'recordings'
+
+    id = Column(Integer, Sequence('target_permission_seq'), primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    session_id = Column(String)
+
+    user = relationship("User", backref=backref('user_recordings', order_by=id))
 
 class TargetPermission(_Base):
     __tablename__ = 'target_permissions'
