@@ -57,7 +57,7 @@ class Agent(object):
             return False
 
     def store(self, username, hostname, key):
-        return store_data(username+"@"+hostname, key)
+        return self.store_data(username+"@"+hostname, key)
 
     def retrieve(self, id):
         try:
