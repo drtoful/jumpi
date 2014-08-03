@@ -67,5 +67,5 @@ class Agent(object):
             if req.status_code == 200:
                 return req.text
             return None
-        except request.exceptions.ConnectionError:
+        except requests.exceptions.ConnectionError:
             return None
