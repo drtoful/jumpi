@@ -27,9 +27,7 @@ def unlock():
     agent = Agent()
 
     agent.unlock(request.form['passphrase'])
-    print request.form
     SecureString.clearmem(request.form['passphrase'])
-    print request.form
 
     return redirect(url_for('system.index'))
 
