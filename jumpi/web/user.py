@@ -8,8 +8,9 @@ import datetime
 import base64
 
 from flask import Blueprint, redirect, url_for, request
-from jumpi.web.decorators import templated, authenticated
+from jumpi.web.decorators import templated, authenticated, jsonr
 from jumpi.db import Session, User
+from jumpi.sh.agent import Agent
 
 user = Blueprint("user", __name__)
 get = functools.partial(user.route, methods=['GET'])
@@ -110,3 +111,19 @@ def recordings(id):
         return redirect(url_for('user.index'))
 
     return dict(user=user)
+
+@get("/<int:id>/recordings/json")
+@authenticated
+@jsonr()
+def recordings_json(id):
+    session_id = request.values.get("session", None)
+
+    if session_id is None:
+        return redirect(url_for('user.index'))
+
+    agent = Agent()
+    data = agent.retrieve(str(id)+"@"+session_id)
+    if data is None:
+        return redirect(url_for('user.index'))
+
+    return data.rstrip("\x00")

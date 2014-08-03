@@ -64,10 +64,18 @@ def jsonr():
         @wraps(f)
         def json_function(*args, **kwargs):
             context = f(*args, **kwargs)
-            if not isinstance(context, dict):
+
+            if not isinstance(context, dict) and \
+                not isinstance(context, basestring):
                 return context
 
-            response = make_response(json.dumps(context))
+            content = ""
+            if isinstance(context, basestring):
+                content = str(context)
+            else:
+                content = json.dumps(context)
+
+            response = make_response(content)
             response.headers['Content-Type'] = "application/json"
 
             return response
