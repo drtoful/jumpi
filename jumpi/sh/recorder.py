@@ -24,6 +24,23 @@ import time
 import subprocess
 import tty
 
+def _force_unicode(txt):
+    try:
+        return unicode(txt)
+    except UnicodeDecodeError:
+        pass
+
+    orig = txt
+    if type(txt) != str:
+        txt = str(txt)
+    for args in [('utf-8',), ('latin1',), ('ascii', 'replace')]:
+        try:
+            return txt.decode(*args)
+        except UnicodeDecodeError:
+            pass
+
+    return ""
+
 class Recorder(object):
     class Recording(object):
         def __init__(self, lines, columns):
@@ -40,7 +57,7 @@ class Recorder(object):
             secs, microsecs, data = capture
 
             self.screen.dirty.clear()
-            self.stream.feed(unicode(data))
+            self.stream.feed(_force_unicode(data))
             display = self.screen.display
 
             self.duration += secs
