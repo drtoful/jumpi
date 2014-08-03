@@ -44,7 +44,11 @@ class Recording(_Base):
 
     id = Column(Integer, Sequence('target_permission_seq'), primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"))
-    session_id = Column(String)
+    session_id = Column(String, nullable=False)
+    width = Column(Integer, nullable=False, default=80)
+    height = Column(Integer, nullable=False, default=24)
+    duration = Column(Integer, nullable=False, default=0)
+    time = Column(DateTime(timezone="UTC"), nullable=False)
 
     user = relationship("User", backref=backref('user_recordings', order_by=id))
 

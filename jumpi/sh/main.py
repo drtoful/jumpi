@@ -52,7 +52,11 @@ You're logged in as: %s
     # save the recording to the users recordings list
     recording = Recording(
         user_id = user.id,
-        session_id = shell.session
+        session_id = shell.session,
+        duration = recorder.recording.duration,
+        width = recorder.recording.columns,
+        height = recorder.recording.lines,
+        time = datetime.datetime.now()
     )
     if a.store_data(str(user.id)+"@"+shell.session, str(recorder.recording)):
         session.add(recording)
