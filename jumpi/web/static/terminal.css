@@ -1,14 +1,41 @@
-.terminal-container{
+.modal.modal-wide .modal-dialog{
+    width: 90%;
+}
+
+.modal-wide .modal-body{
+    overflow-y: auto;
+}
+
+.terminal-container, .terminal-controls{
+ display: table-row;
  background: #666;
  color: #efefef;
  font-size: 12px;
- padding: 7px;
- display: table-cell;
  font-family: 'Droid Sans Mono', Courier, monospace;
 }
 
 .terminal-line{
  white-space: pre;
- padding: 0;
+ padding-left: 7px;
+ padding-right: 7px;
  margin: 0;
+}
+
+.terminal-line:first-child{
+ padding-top: 7px;
+}
+
+.terminal-line:last-child{
+ padding-bottom: 7px;
+}
+
+.terminal-controls{
+}
+
+.terminal-controls p.terminal-line{
+border-bottom: 1px solid #999;
+}
+
+.terminal-button{
+ background: #666;
 }

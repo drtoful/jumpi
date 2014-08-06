@@ -1,12 +1,12 @@
 {% extends "base.xhtml" %}
 
 {% block script %}
-    <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Droid+Sans+Mono">
+    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Droid+Sans+Mono">
     <link href="{{ url_for('static', filename="terminal.css") }}" rel="stylesheet" />
     <script type="text/javascript" src="{{ url_for('static', filename="terminal.js") }}"></script>
     <script type="text/javascript">
         $(document).ready(function() {
-            $("#terminal").hide();
+            //$("#terminal").hide();
             $(".play").click(function() {
                 width = $(this).attr("player-width");
                 height = $(this).attr("player-height");
@@ -16,7 +16,6 @@
                 $("#terminal").show();
                 $.getJSON("{{ url_for('user.recordings_json', id=user.id) }}?session="+session, function(data) {
                     term.load(data);
-                    term.run();
                 });
             });
         });
@@ -44,12 +43,24 @@
             <strong>{{ rec.time }}</strong>&nbsp;
             <em>(Session: {{ rec.session_id }})</em>
 
-            <button type="button" player-width="{{ rec.width }}" player-height="{{ rec.height }}" player-duration="{{ rec.duration }}" player-session="{{ rec.session_id }}" class="btn btn-xs btn-primary pull-right play"><span class="fa fa-play"></span>&nbsp;&nbsp;play</button>
+            <button type="button" player-width="{{ rec.width }}" player-height="{{ rec.height }}" player-duration="{{ rec.duration }}" player-session="{{ rec.session_id }}" class="btn btn-xs btn-primary pull-right play" data-toggle="modal" data-target=".bs-terminal-modal"><span class="fa fa-play"></span>&nbsp;&nbsp;play</button>
         </div>
 {% endfor %}
     </div>
 </div>
 
-<div id="terminal" class="terminal-container"></div>
+<div class="modal modal-wide fade bs-terminal-modal" tabindex="-1" role="dialog" arial-hidden="true" aria-labelledby="terminalLabel">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title" id="terminalLabel">Terminal Player</h4>
+            </div>
+            <div class="modal-body">
+                <div id="terminal" class="terminal-container"></div>
+            </div>
+        </div>
+    </div>
+</div>
 
 {% endblock %}
