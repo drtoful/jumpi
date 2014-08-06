@@ -26,7 +26,7 @@ class User(_Base):
         order_by="TunnelPermission.id", cascade="all,delete",
         backref="user_tunnels")
     recordings = relationship("Recording",
-        order_by="Recording.id", cascade="all, delete",
+        order_by="Recording.time.desc()", cascade="all, delete",
         backref="user_recordings")
 
 class Target(_Base):
