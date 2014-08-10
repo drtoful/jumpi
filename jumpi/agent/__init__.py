@@ -7,7 +7,7 @@ import hashlib
 
 try:
     import pwd
-    HOME_DIR = pwd.getpwuid(os.getuid()).pwd_dir
+    HOME_DIR = pwd.getpwuid(os.getuid()).pw_dir
 except:
     HOME_DIR = os.path.expanduser("~")
 
