@@ -85,6 +85,7 @@ Terminal.prototype.attach = function(selector) {
 
     // add new controls and draw empty frame
     this.terminal.after(this._controls);
+    this.terminal.after($("<p class=\"terminal-spacer\"/>"));
     this._draw();
 }
 

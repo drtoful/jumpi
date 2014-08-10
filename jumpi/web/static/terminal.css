@@ -1,17 +1,31 @@
 .modal.modal-wide .modal-dialog{
-    width: 90%;
+ width: 90%;
 }
 
 .modal-wide .modal-body{
-    overflow-y: auto;
+ overflow-y: auto;
+ text-align: center;
+}
+
+.terminal-spacer{
+ height: 0;
+ font-size: 0;
+ margin: 0;
+ padding: 0;
 }
 
 .terminal-container, .terminal-controls{
- display: table-row;
+ display: inline-block;
  background: #666;
  color: #efefef;
  font-size: 12px;
  font-family: 'Droid Sans Mono', Courier, monospace;
+ margin: 0px auto;
+ text-align: left;
+}
+
+.terminal-container{
+ margin-bottom: 0;
 }
 
 .terminal-line{
