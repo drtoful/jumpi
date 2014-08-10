@@ -6,8 +6,10 @@ import hashlib
 import re
 import datetime
 import base64
+import json
+import struct
 
-from flask import Blueprint, redirect, url_for, request
+from flask import Blueprint, redirect, url_for, request, make_response
 from jumpi.web.decorators import templated, authenticated, jsonr
 from jumpi.db import Session, User
 from jumpi.sh.agent import Agent
@@ -127,3 +129,34 @@ def recordings_json(id):
         return redirect(url_for('user.index'))
 
     return data.rstrip("\x00")
+
+@get("/<int:id>/recordings/ttyrec")
+@authenticated
+def recordings_ttyrec(id):
+    session_id = request.values.get("session", None)
+    if session_id is None:
+        return redirect(url_for('user.index'))
+
+    agent = Agent()
+    data = agent.retrieve(str(id)+"@"+session_id)
+    if data is None:
+        return redirect(url_for('user.index'))
+
+    data = json.loads(data.rstrip("\x00"))
+    result = []
+    for rec in data['recording']:
+        if not "raw" in rec:
+            continue
+        secs = rec['delay'] // 1000000
+        micro = rec['delay'] % 1000000
+        raw = base64.b64decode(rec['raw'])
+        result.append(struct.pack("<I", secs))
+        result.append(struct.pack("<I", micro))
+        result.append(struct.pack("<I", len(raw)))
+        result.append(raw)
+
+    response = make_response("".join(result))
+    response.headers['Content-Type'] = "application/ttyrec"
+    response.headers['Content-Disposition'] = \
+        "attachment; filename=%s.ttyrec" % session_id
+    return response

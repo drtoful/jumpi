@@ -23,6 +23,7 @@ import select
 import time
 import subprocess
 import tty
+import base64
 
 def _force_unicode(txt):
     try:
@@ -66,7 +67,8 @@ class Recorder(object):
             self.recordings.append({
                 'delay': secs*1000000+microsecs,
                 'changes': list(self.screen.dirty),
-                'data': [display[x].rstrip() for x in self.screen.dirty]
+                'data': [display[x].rstrip() for x in self.screen.dirty],
+                'raw': base64.b64encode(data)
             })
 
         def __str__(self):
