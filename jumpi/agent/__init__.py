@@ -5,8 +5,13 @@ import logging
 import random
 import hashlib
 
-_filename = os.path.expanduser("~")
-_filename = os.path.join(_filename, "log")
+try:
+    import pwd
+    HOME_DIR = pwd.getpwuid(os.getuid()).pwd_dir
+except:
+    HOME_DIR = os.path.expanduser("~")
+
+_filename = os.path.join(HOME_DIR, "log")
 if not os.path.isdir(_filename):
     os.mkdir(_filename, 0700)
 _filename = os.path.join(_filename, "agent.log")

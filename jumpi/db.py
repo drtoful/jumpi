@@ -83,7 +83,12 @@ class TunnelPermission(_Base):
     user = relationship("User", backref=backref('user_tunnels', order_by=id))
     tunnel = relationship("Tunnel", backref=backref('tunnels', order_by=id))
 
-_home = os.path.expanduser("~")
+try:
+    import pwd
+    _home = pwd.getpwuid(os.getuid()).pw_dir
+except:
+    _home = os.path.expanduser("~")
+
 _db_engine = create_engine("sqlite:///%s" % os.path.join(_home, "jumpi.db"))
 _Base.metadata.create_all(_db_engine, checkfirst=True)
 

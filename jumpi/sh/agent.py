@@ -5,11 +5,12 @@ import json
 import os
 import ConfigParser
 
+from jumpi.sh import HOME_DIR
+
 
 class Agent(object):
     def __init__(self, host="127.0.0.1", port=42000):
-        file = os.path.expanduser("~")
-        file = os.path.join(file, "jumpi-agent.cfg")
+        file = os.path.join(HOME_DIR, "jumpi-agent.cfg")
         if os.path.isfile(file):
             parser = ConfigParser.SafeConfigParser()
             parser.read(file)

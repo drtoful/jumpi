@@ -3,14 +3,13 @@
 import os
 
 from jumpi.agent.api import app
-from jumpi.agent import log
+from jumpi.agent import log, HOME_DIR
 from jumpi.app import DaemonApp
 
 class Main(DaemonApp):
     def __init__(self):
         DaemonApp.__init__(self)
-        home = os.path.expanduser("~")
-        self.pidfile = os.path.join(home, "jumpi-agent.pid")
+        self.pidfile = os.path.join(HOME_DIR, "jumpi-agent.pid")
 
     def start(self):
         log.info("starting jumpi agent")

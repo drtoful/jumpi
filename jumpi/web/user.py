@@ -11,6 +11,7 @@ import struct
 
 from flask import Blueprint, redirect, url_for, request, make_response
 from jumpi.web.decorators import templated, authenticated, jsonr
+from jumpi.web.utils import HOME_DIR
 from jumpi.db import Session, User
 from jumpi.sh.agent import Agent
 
@@ -23,7 +24,7 @@ _title_re = re.compile("[^<>{}\[\]]+", re.IGNORECASE)
 _id_re = re.compile("[0-9]+")
 
 def _recompute_authorized_keys():
-    dir = os.path.join(os.path.expanduser("~"), ".ssh")
+    dir = os.path.join(HOME_DIR, ".ssh")
     file = os.path.join(dir, "authorized_keys")
 
     if not os.path.isdir(dir):

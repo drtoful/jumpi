@@ -3,13 +3,17 @@
 import os
 import bcrypt
 
+try:
+    import pwd
+    HOME_DIR = pwd.getpwuid(os.getuid()).pw_dir
+except:
+    HOME_DIR = os.path.expanduser("~")
+
 from pyvault.utils import constant_time_compare
 
 class WebPass(object):
     def __init__(self):
-        home = os.path.expanduser("~")
-
-        self.filename = os.path.join(home, "jumpi-web.pass")
+        self.filename = os.path.join(HOME_DIR, "jumpi-web.pass")
         if not os.path.isfile(self.filename):
             self.update("admin")
         else:

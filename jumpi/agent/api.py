@@ -6,12 +6,12 @@ import os
 from flask import Flask, request, Response
 from pyvault import PyVault
 from pyvault.backends.file import PyVaultFileBackend
-from jumpi.agent import log, get_session_id
+from jumpi.agent import log, get_session_id, HOME_DIR
 
 app = Flask(__name__)
 
 _backend = PyVaultFileBackend(
-    os.path.join(os.path.expanduser("~"), ".store")
+    os.path.join(HOME_DIR, ".store")
 )
 _vault = PyVault(_backend)
 

@@ -3,13 +3,13 @@
 import os
 
 from jumpi.web import create_app
+from jumpi.web.utils import HOME_DIR
 from jumpi.app import DaemonApp
 
 class Main(DaemonApp):
     def __init__(self):
         DaemonApp.__init__(self)
-        home = os.path.expanduser("~")
-        self.pidfile = os.path.join(home, "jumpi-web.pid")
+        self.pidfile = os.path.join(HOME_DIR, "jumpi-web.pid")
 
     def start(self):
         app = create_app()
