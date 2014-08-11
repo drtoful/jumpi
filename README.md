@@ -21,6 +21,7 @@ above command
 * [requests](http://docs.python-requests.org/en/latest/) >= 2.2.1
 * [paramiko](http://www.paramiko.org/) >= 1.14
 * [pyvault](https://github.com/drtoful/pyvault) >= 0.1
+* [pyte](http://pyte.readthedocs.org/en/latest/) >= 0.4.8
 
 To successfully build and install the dependencies you might install
 additional packages using your distributions package manager. For the
@@ -74,6 +75,10 @@ you can specify the agent host and port:
     [agent]
     host = 127.0.0.1
     port = 42000
+
+There's a set of sample configuration files for uwsgi and nginx in the 'conf'
+folder. We suggest using the emperor mode of uwsgi to handle loading of the
+uwsgi processes.
 
 ## Configuration
 

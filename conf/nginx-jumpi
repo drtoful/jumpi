@@ -1,0 +1,17 @@
+server {
+    listen 127.0.0.1:42000;
+    server_name localhost;
+    location / {
+        include uwsgi_params;
+        uwsgi_pass unix:/tmp/jumpi-agent.sock;
+    }
+}
+
+server {
+    listen 8000;
+    server_name localhost;
+    location / {
+        include uwsgi_params;
+        uwsgi_pass unix:/tmp/jumpi-web.sock;
+    }
+}
