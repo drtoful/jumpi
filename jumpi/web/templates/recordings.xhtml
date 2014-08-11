@@ -6,14 +6,12 @@
     <script type="text/javascript" src="{{ url_for('static', filename="terminal.js") }}"></script>
     <script type="text/javascript">
         $(document).ready(function() {
-            //$("#terminal").hide();
             $(".play").click(function() {
                 width = $(this).attr("player-width");
                 height = $(this).attr("player-height");
                 session = $(this).attr("player-session");
                 term = new Terminal(height, width);
                 term.attach("#terminal");
-                $("#terminal").show();
                 $.getJSON("{{ url_for('user.recordings_json', id=user.id) }}?session="+session, function(data) {
                     term.load(data);
                 });

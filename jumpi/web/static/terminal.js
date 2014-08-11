@@ -8,6 +8,7 @@ function Terminal(lines, columns) {
 
     // set new terminal to paused
     this.running = false;
+    this._loaded = false;
 
     // prepare controls
     this._controls = $("<div class=\"terminal-controls\"/>");
@@ -15,8 +16,12 @@ function Terminal(lines, columns) {
 
     var terminal = this;
     var button = $("<button class=\"btn btn-xs terminal-button\" type=\"button\" />");
-    button.html("<span class=\"fa fa-play fa-fw\"></span>");
+    button.html("<span class=\"fa fa-refresh fa-spin\"></span>");
     button.click(function() {
+        if(!terminal._loaded) {
+            return;
+        }
+
         classes = "fa fa-fw";
         if(!terminal.running) {
             classes = classes + " fa-pause";
@@ -28,7 +33,7 @@ function Terminal(lines, columns) {
         button.html("<span class=\""+classes+"\"></span>");
     });
     this._controls.append(button);
-
+    this._play_button = button;
 
     //this._elapsed = $("<span class=\"terminal-elapsed\" />").html(" 00:00");
     //this._controls.append(this._elapsed);
@@ -69,8 +74,10 @@ Terminal.prototype._update = function(self) {
 }
 
 Terminal.prototype.load = function(data) {
+    this._loaded = true;
     this._data = data;
-    this._index = 0
+    this._index = 0;
+    this._play_button.html("<span class=\"fa fa-fw fa-play\"></span>");
 }
 
 Terminal.prototype.attach = function(selector) {
