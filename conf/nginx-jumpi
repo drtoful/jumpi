@@ -3,7 +3,7 @@ server {
     server_name localhost;
     location / {
         include uwsgi_params;
-        uwsgi_pass unix:/tmp/jumpi-agent.sock;
+        uwsgi_pass unix:/run/jumpi-agent.sock;
     }
 }
 
@@ -12,6 +12,6 @@ server {
     server_name localhost;
     location / {
         include uwsgi_params;
-        uwsgi_pass unix:/tmp/jumpi-web.sock;
+        uwsgi_pass unix:/run/jumpi-web.sock;
     }
 }
