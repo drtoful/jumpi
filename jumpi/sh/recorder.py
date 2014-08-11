@@ -179,9 +179,16 @@ class Recorder(object):
             process = subprocess.Popen(args, stdout=subprocess.PIPE)
             return process.communicate()[0].strip()
 
-        self.recording = Recorder.Recording(
-            int(get_command_output(["tput", "lines"])),
-            int(get_command_output(["tput", "cols"]))
-        )
+        try:
+            lines = int(get_command_output(["tput", "lines"]))
+        except:
+            lines = 24
+
+        try:
+            cols = int(get_command_output(["tput", "cols"]))
+        except:
+            cols = 80
+
+        self.recording = Recorder.Recording(lines, cols)
         for capture in self.output:
             self.recording.update(capture)
