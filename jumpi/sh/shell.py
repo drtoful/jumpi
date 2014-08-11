@@ -53,6 +53,9 @@ class JumpiShell(cmd.Cmd):
         finally:
             termios.tcsetattr(sys.stdin, termios.TCSADRAIN, oldtty)
 
+    def do_exit(self, line):
+        return True
+
     def do_ssh(self, line):
         target_id = line.split(" ", 1)[0].strip()
         session = Session()
@@ -74,7 +77,6 @@ class JumpiShell(cmd.Cmd):
                 "not load secret" % (self.session, target_id))
             print "Permission denied!"
             return
-
 
         client = paramiko.SSHClient()
         username, hostname = target_id.split("@",1)

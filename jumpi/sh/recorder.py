@@ -148,6 +148,10 @@ class Recorder(object):
 
         # child is executing original program
         if pid == pty.CHILD:
+            def signal_sigint(signal, frame):
+                sys.exit(0)
+            signal.signal(signal.SIGINT, signal_sigint)
+
             func(*args, **kwargs)
             sys.exit(0)
 

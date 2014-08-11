@@ -59,6 +59,7 @@ You're logged in as: %s
         height = recorder.recording.lines,
         time = start
     )
-    if a.store_data(str(user.id)+"@"+shell.session, str(recorder.recording)):
+    id = str(user.id)+"@"+shell.session
+    if a.store_data(id, str(recorder.recording)):
         session.add(recording)
         session.commit()
