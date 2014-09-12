@@ -1,6 +1,7 @@
 #-*- coding: utf-8 -*-
 
 import sys
+import signal
 import os
 import datetime
 
@@ -9,6 +10,8 @@ from jumpi.sh.shell import JumpiShell
 from jumpi.db import Session, User, Recording
 from jumpi.sh import log
 from jumpi.sh.recorder import Recorder
+
+handling = False
 
 def main():
     # check argument length
@@ -43,6 +46,32 @@ You're logged in as: %s
     shell = JumpiShell(user)
     recorder = Recorder()
 
+    def sig_terminating(*args, **kwargs):
+        global handling
+
+        if handling:
+            return
+
+        # save the recording to the users recordings list
+        handling = True
+        recording = Recording(
+            user_id = user.id,
+            session_id = shell.session,
+            duration = recorder.recording.duration,
+            width = recorder.recording.columns,
+            height = recorder.recording.lines,
+            time = start
+        )
+        id = str(user.id)+"@"+shell.session
+        if a.store_data(id, str(recorder.recording)):
+            session.add(recording)
+            session.commit()
+
+        sys.exit(0)
+
+    signal.signal(signal.SIGTERM, sig_terminating)
+    signal.signal(signal.SIGHUP, sig_terminating)
+
     cmd = os.environ.get('SSH_ORIGINAL_COMMAND', None)
     start = datetime.datetime.now()
     if cmd is None:
@@ -50,16 +79,4 @@ You're logged in as: %s
     else:
         recorder.record(shell.onecmd, cmd)
 
-    # save the recording to the users recordings list
-    recording = Recording(
-        user_id = user.id,
-        session_id = shell.session,
-        duration = recorder.recording.duration,
-        width = recorder.recording.columns,
-        height = recorder.recording.lines,
-        time = start
-    )
-    id = str(user.id)+"@"+shell.session
-    if a.store_data(id, str(recorder.recording)):
-        session.add(recording)
-        session.commit()
+    sig_terminating()

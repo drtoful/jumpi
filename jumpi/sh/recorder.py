@@ -117,7 +117,7 @@ class Recorder(object):
         self.timing = now
 
         secs, microsecs = ("%f" % delta).split(".")
-        self.output.append((int(secs), int(microsecs), data))
+        self.recording.update((int(secs), int(microsecs), data))
 
     def _copy(self):
         """main select loop"""
@@ -144,18 +144,34 @@ class Recorder(object):
     def record(self, func, *args, **kwargs):
         pid, self.master_fd = pty.fork()
         self.timing = time.time()
-        self.output = []
 
         # child is executing original program
         if pid == pty.CHILD:
             def signal_sigint(signal, frame):
                 sys.exit(0)
             signal.signal(signal.SIGINT, signal_sigint)
+            signal.signal(signal.SIGTERM, signal_sigint)
+            signal.signal(signal.SIGHUP, signal_sigint)
 
             func(*args, **kwargs)
             sys.exit(0)
 
         # parent is capturing screen of child
+        def get_command_output(args):
+            process = subprocess.Popen(args, stdout=subprocess.PIPE)
+            return process.communicate()[0].strip()
+
+        try:
+            lines = int(get_command_output(["tput", "lines"]))
+        except:
+            lines = 24
+
+        try:
+            cols = int(get_command_output(["tput", "cols"]))
+        except:
+            cols = 80
+
+        self.recording = Recorder.Recording(lines, cols)
 
         # get all window size changes
         old_handler = signal.signal(signal.SIGWINCH, self._signal_winch)
@@ -178,21 +194,3 @@ class Recorder(object):
 
         os.close(self.master_fd)
         signal.signal(signal.SIGWINCH, old_handler)
-
-        def get_command_output(args):
-            process = subprocess.Popen(args, stdout=subprocess.PIPE)
-            return process.communicate()[0].strip()
-
-        try:
-            lines = int(get_command_output(["tput", "lines"]))
-        except:
-            lines = 24
-
-        try:
-            cols = int(get_command_output(["tput", "cols"]))
-        except:
-            cols = 80
-
-        self.recording = Recorder.Recording(lines, cols)
-        for capture in self.output:
-            self.recording.update(capture)
