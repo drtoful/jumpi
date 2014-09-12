@@ -86,6 +86,19 @@ Once you login to the Web-UI, configuration should be straight forward. Before
 you edit anything though, you have to unlock the agent. This you can do under
 "System".
 
+### Encryption
+
+Encryption on the Raspberry Pi is not really what you could call efficient
+or fast. Most of the time is consumed when deriving the "session" keys using
+PBKDF2. The main time consumer is the number of iterations (naturally). You
+can tune this in the file `jumpi-agent.cfg` in the home directory.
+
+    [cipher]
+    iterations = 500
+
+This will change the number of iterations to 500 (half of the default 
+iterations of 1000).
+
 ## License
 
 JumPi is licensed under the BSD License. See LICENSE for more information.
