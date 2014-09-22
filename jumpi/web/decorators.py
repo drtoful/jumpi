@@ -2,6 +2,8 @@
 
 import json
 import bcrypt
+import base64
+import os
 
 from flask import render_template, request, session, redirect, url_for, app
 from flask import make_response
@@ -22,8 +24,14 @@ def authenticated(f):
             response.headers['WWW-Authenticate'] = "Basic realm=\"JumPi\""
             return response
 
-        if not auth or not check_auth():
+        if not session.get('authenticated', None) and \
+            (not auth or not check_auth()):
             return authenticate()
+
+        session['authenticated'] = True
+        session['username'] = auth['username']
+        if session.get('salt', None) is None:
+            session['salt'] = base64.b64encode(os.urandom(12))
 
         return f(*args, **kwargs)
     return decorator
