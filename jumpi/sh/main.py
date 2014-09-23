@@ -77,6 +77,10 @@ You're logged in as: %s
     if cmd is None:
         recorder.record(shell.cmdloop, intro=intro)
     else:
-        recorder.record(shell.onecmd, cmd)
+        if cmd.startswith("scp"):
+            shell.onecmd(cmd)
+        else:
+            recorder.record(shell.onecmd, cmd)
 
-    sig_terminating()
+    if not cmd.startswith("scp"):
+        sig_terminating()

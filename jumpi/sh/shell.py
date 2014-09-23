@@ -11,6 +11,7 @@ import tty
 
 from jumpi.db import Session, TargetPermission
 from jumpi.sh.agent import Agent
+from jumpi.sh.scp import SCP
 from jumpi.sh import log, get_session_id
 
 class JumpiShell(cmd.Cmd):
@@ -55,6 +56,10 @@ class JumpiShell(cmd.Cmd):
 
     def do_exit(self, line):
         return True
+
+    def do_scp(self, line):
+        scp = SCP()
+        scp.retrieve()
 
     def do_ssh(self, line):
         target_id = line.split(" ", 1)[0].strip()
