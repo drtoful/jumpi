@@ -42,7 +42,7 @@ class Target(_Base):
 class Recording(_Base):
     __tablename__ = 'recordings'
 
-    id = Column(Integer, Sequence('target_permission_seq'), primary_key=True)
+    id = Column(Integer, Sequence('recording_id_seq'), primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     session_id = Column(String, nullable=False)
     width = Column(Integer, nullable=False, default=80)
