@@ -5,8 +5,11 @@ import sys
 import re
 import select
 import time
+import hashlib
+import datetime
 
-from jumpi.sh import log
+from jumpi.sh import log, HOME_DIR
+from jumpi.db import Session, File
 
 _copy_re = re.compile(
     "C(?P<mode>\d+) (?P<length>\d+) (?P<filename>.*)",
@@ -34,7 +37,8 @@ class _PseudoSocket(object):
         return data
 
     def tell(self):
-        return select.select([self.stdin,],[],[],0.0)[0]
+        rlist, _, _ = select.select([self.stdin],[],[],0.1)
+        return self.stdin in rlist
 
 class _SCPException(Exception):
     pass
@@ -62,9 +66,11 @@ class _SCPServer(object):
             c = self.socket.recv(1)
             if c == "\n":
                 break
-            data.append(c)
             if c == "\x00":
                 break
+            if c == "\xff":
+                break
+            data.append(c)
         return "".join(data)
 
     def _copy(self, line):
@@ -109,12 +115,15 @@ class _SCPServer(object):
         self._dirstack.append(dirname)
         self.si.mkdir(dirname, 0)
 
-    def start(self):
+    def receive(self):
+        time.sleep(0.1) # make sure receiver is ready
         self.socket.send(_SCPServer.CMD_OK)
+        time.sleep(0.1) # make sure receiver got answer
         while True:
             line = self._readline()
             if line is None or len(line) == 0:
                 break
+
             if line.startswith("C"):
                 self._copy(line)
             elif line.startswith("D"):
@@ -130,25 +139,76 @@ class _SCPServer(object):
                 break
 
 class JumpiStorage(_SCPServerInterface):
+    DATA_DIRECTORY = os.path.join(HOME_DIR, "data")
+
     class JumpiFile(object):
+        def __init__(self, path, user):
+            self.user = user
+
+            # make sure data directory exists
+            try:
+                os.makedirs(JumpiStorage.DATA_DIRECTORY)
+            except:
+                pass
+
+            # convert path to unique hash
+            digest = hashlib.sha256();
+            digest.update(str(user.id)+"::"+path)
+
+            # open the file to read or write
+            self.path = path
+            self.file = os.path.join(
+                JumpiStorage.DATA_DIRECTORY,
+                digest.hexdigest()
+            )
+            self.fp = open(self.file, "w+")
+
+            # stores file attributes
+            self.len = 0
+            self.has_written = False
+
         def write(self, data):
-            pass
+            self.fp.write(data)
+            self.len += len(data)
+            self.has_written = True
 
         def close(self):
-            pass
+            # close file descriptor
+            self.fp.close()
+            if not self.has_written:
+                return
+
+            # save file for user
+            file = File(
+                user_id = self.user.id,
+                basename = self.path,
+                filename = self.file,
+                created = datetime.datetime.now()
+            )
+            session = Session()
+            session.merge(file)
+            session.commit()
+
+            # log
+            log.info("user='%s' id=%d has uploaded new file=%s with length=%d" %
+                (self.user.fullname, self.user.id, self.file, self.len))
+
+
+    def __init__(self, user):
+        self.user = user
 
     def open(self, path, attr, flags):
-        return JumpiStorage.JumpiFile()
+        return JumpiStorage.JumpiFile(path, self.user)
 
     def mkdir(self, path, attr):
         pass
 
-class SCP(object):
-    def retrieve(self):
+class SCPServer(object):
+    def retrieve(self, user):
         socket = _PseudoSocket(sys.stdin, sys.stdout)
-        si = JumpiStorage()
+        si = JumpiStorage(user)
         server = _SCPServer(socket, si=si)
-        server.start()
+        server.receive()
 
     def send(self):
         pass

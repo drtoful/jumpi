@@ -28,6 +28,8 @@ class User(_Base):
     recordings = relationship("Recording",
         order_by="Recording.time.desc()", cascade="all, delete",
         backref="user_recordings")
+    files = relationship("File", order_by="File.filename", cascade="all,delete",
+        backref="user_files")
 
 class Target(_Base):
     __tablename__ = 'targets'
@@ -51,6 +53,17 @@ class Recording(_Base):
     time = Column(DateTime(timezone="UTC"), nullable=False)
 
     user = relationship("User", backref=backref('user_recordings', order_by=id))
+
+class File(_Base):
+    __tablename__ = 'files'
+
+    filename = Column(String, nullable=False, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    basename = Column(String, nullable=False)
+    created = Column(DateTime(timezone="UTC"), nullable=False)
+
+    user = relationship("User",
+        backref=backref('user_files', order_by=filename))
 
 class TargetPermission(_Base):
     __tablename__ = 'target_permissions'
