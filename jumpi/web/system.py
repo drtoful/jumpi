@@ -3,7 +3,7 @@
 import functools
 import SecureString
 
-from flask import Blueprint, redirect, url_for, request
+from flask import Blueprint, redirect, url_for, request, session
 from jumpi.web.decorators import templated, authenticated
 from jumpi.sh.agent import Agent
 from jumpi.web.utils import WebPass
@@ -42,5 +42,6 @@ def changepw():
 
     if checker.verify(old) and new1 == new2:
         checker.update(new1)
+        session["authenticated"] = False # force reauthentication
 
     return redirect(url_for('system.index'))
