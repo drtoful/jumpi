@@ -4,6 +4,7 @@ import sys
 import cmd
 import paramiko
 import StringIO
+import shlex
 
 # only works on unix
 import termios
@@ -13,6 +14,7 @@ from jumpi.db import Session, TargetPermission
 from jumpi.sh.agent import Agent
 from jumpi.sh.scp import SCPServer
 from jumpi.sh import log, get_session_id
+from optparse import OptionParser
 
 class JumpiShell(cmd.Cmd):
     def __init__(self, user, **kwargs):
@@ -58,8 +60,35 @@ class JumpiShell(cmd.Cmd):
         return True
 
     def do_scp(self, line):
-        scp = SCPServer()
-        scp.retrieve(self.user)
+        try:
+            # parse argument line to see if we need to
+            # go into "server" mode
+            args = shlex.split(line)
+            parser = OptionParser()
+            parser.add_option("-t", action="store_true") # source mode
+            parser.add_option("-f", action="store_true") # sink mode
+            # some default scp options that might get passed
+            parser.add_option("-q", action="store_true")
+            parser.add_option("-r", action="store_true")
+            parser.add_option("-p", action="store_true")
+            parser.add_option("-v", action="store_true")
+            parser.add_option("-d", action="store_true")
+            (options, args) = parser.parse_args(args)
+
+            if options.t:
+                scp = SCPServer()
+                scp.retrieve(self.user)
+                return False
+            if options.f:
+                scp = SCPServer()
+                scp.send(self.user, args[0])
+                return False
+        except:
+            log.error("session=%s unable to parse scp line \"%s\", \"%s\"" % (
+                self.session, line, sys.exc_info()[0]))
+
+        # otherwise we're in normal "client mode"
+        return False
 
     def do_ls(self, line):
         for file in self.user.files:

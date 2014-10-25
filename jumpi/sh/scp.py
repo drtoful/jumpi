@@ -73,6 +73,51 @@ class _SCPServer(object):
             data.append(c)
         return "".join(data)
 
+    def _write(self, path):
+        def _check_ok():
+            time.sleep(0.1)
+            if not self.socket.tell():
+                self.socket.send(_SCPServer.CMD_ERR)
+                return -1
+            resp = self.socket.recv(1)
+            if resp != _SCPServer.CMD_OK:
+                self.socket.send(_SCPServer.CMD_ERR)
+                return -1
+
+        paths = path.split("/")
+
+        directories = 0
+        for part in paths[:-1]:
+            self.socket.send("D0700 0 %s\n" % part)
+            if _check_ok() == -1:
+                return -1
+            directories += 1
+
+        fp = self.si.open(path, 0, 1)
+
+        fp.seek(0, 2)
+        size = fp.tell()
+        fp.seek(0, 0)
+
+        self.socket.send("C0600 %d %s\n" % (size,paths[-1]))
+        if _check_ok() == -1:
+            return -1
+
+        bytes = 0
+        while size > 0:
+            step = (size, 4096)[size > 4096]
+            data = fp.read(step)
+            self.socket.send(data)
+            size -= len(data)
+            bytes += len(data)
+
+        fp.close()
+
+        for _ in xrange(0,directories):
+            self.socket.send("E\n")
+            if _check_ok() == -1:
+                return -1
+
     def _copy(self, line):
         # check consistency
         match = _copy_re.match(line)
@@ -99,6 +144,8 @@ class _SCPServer(object):
 
         # send confirmation
         self.socket.send(_SCPServer.CMD_OK)
+        if self.socket.tell():
+            self.socket.recv(1)
 
     def _directory(self, line):
         # check consistency
@@ -138,11 +185,32 @@ class _SCPServer(object):
             if not self.socket.tell():
                 break
 
+    def send(self, user, path):
+        time.sleep(0.5) # make sure sender is ready
+        if not self.socket.tell():
+            self.socket.send(_SCPServer.CMD_ERR)
+            return
+
+        # we suspect the sender to acknowledge the start
+        # of transmission
+        resp = self.socket.recv(1)
+        if resp != _SCPServer.CMD_OK:
+            self.socket.send(_SCPSERVER.CMD_ERR)
+            return
+
+        # transmit all files that match the given
+        # pattern (startswith)
+        for file in user.files:
+            if file.basename.startswith(path):
+                r = self._write(file.basename)
+                if r == -1:
+                    break
+
 class JumpiStorage(_SCPServerInterface):
     DATA_DIRECTORY = os.path.join(HOME_DIR, "data")
 
     class JumpiFile(object):
-        def __init__(self, path, user):
+        def __init__(self, path, user, readonly=False):
             self.user = user
 
             # make sure data directory exists
@@ -161,11 +229,23 @@ class JumpiStorage(_SCPServerInterface):
                 JumpiStorage.DATA_DIRECTORY,
                 digest.hexdigest()
             )
-            self.fp = open(self.file, "w+")
+            if readonly:
+                self.fp = open(self.file, "r")
+            else:
+                self.fp = open(self.file, "w")
 
             # stores file attributes
             self.len = 0
             self.has_written = False
+
+        def seek(self, start, whence):
+            self.fp.seek(start, whence)
+
+        def read(self, size):
+            return self.fp.read(size)
+
+        def tell(self):
+            return self.fp.tell()
 
         def write(self, data):
             self.fp.write(data)
@@ -198,6 +278,8 @@ class JumpiStorage(_SCPServerInterface):
         self.user = user
 
     def open(self, path, attr, flags):
+        if flags == 1:
+            return JumpiStorage.JumpiFile(path, self.user, True)
         return JumpiStorage.JumpiFile(path, self.user)
 
     def mkdir(self, path, attr):
@@ -210,5 +292,8 @@ class SCPServer(object):
         server = _SCPServer(socket, si=si)
         server.receive()
 
-    def send(self):
-        pass
+    def send(self, user, path):
+        socket = _PseudoSocket(sys.stdin, sys.stdout)
+        si = JumpiStorage(user)
+        server = _SCPServer(socket, si=si)
+        server.send(user, path)
