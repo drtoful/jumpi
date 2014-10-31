@@ -45,9 +45,7 @@ users to create a simple access control.
     # cmd line scripts
     entry_points = {
         'console_scripts': [
-            'jumpi-sh = jumpi.sh.main:main',
-            'jumpi-agent = jumpi.agent.main:Main.run',
-            'jumpi-web = jumpi.web.main:Main.run'
+            'jumpish = jumpi.sh.main:main',
         ],
     },
 )

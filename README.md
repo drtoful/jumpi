@@ -42,30 +42,9 @@ It's discouraged to use an existing user.
     adduser --system --shell /bin/sh --gecos 'ssh jumphost' \
     --group --disabled-password --home /home/jumpi jumpi
 
-Next up, we will start the daemons, that are responsible for communicating
-between each component and to present a nice web-ui.
-
-    su - jump
-    jumpi-web start
-    jumpi-agent start
-
-The Web-UI is available under 127.0.0.1:8080, so you will need to use
-a SSH tunnel to connect to it. The default username and password is "admin".
-
-### Alternative
-
-You can also create your own configuration to start the agent and web webservers
-(for example using nginx/uwsgi or apache/mod\_wsgi). This will allow you to choose
-your own ports and bind the API to different ports. In addition, this also allows
-you to have more than one UI and user per system.
-
-We always suggest to bind the agent only on localhost (127.0.0.1) for security
-reasons.
-
 Both the Web-UI and the agent are fully compliant WSGI applications. For the agent
-use `from jumpi.agent.api import app` (where app is the WSGI application). For
-the Web-UI use `from jumpi.web import create_app` (create\_app is a function, that
-returns a WSGI application).
+use `from jumpi.agent import create_app`. For the Web-UI use `from jumpi.web import create_app`.
+create\_app is a function, that returns a WSGI application.
 
 If you choose non-standard ports to bind the applications to, you have to tell
 them, on which port the agent can be accessed. Do this, by creating a file named
@@ -79,6 +58,9 @@ you can specify the agent host and port:
 There's a set of sample configuration files for uwsgi and nginx in the 'conf'
 folder. We suggest using the emperor mode of uwsgi to handle loading of the
 uwsgi processes.
+
+We always suggest to bind the agent only on localhost (127.0.0.1) for security
+reasons.
 
 ## Configuration
 

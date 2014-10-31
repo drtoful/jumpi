@@ -42,7 +42,7 @@ def _recompute_authorized_keys():
             if len(key.tunnel_permissions) > 0:
                 tunnels = ","+tunnels
 
-            print >>fp, """command="jumpi-sh %d",""" % (key.id) \
+            print >>fp, """command="jumpish %d",""" % (key.id) \
                 +"""no-port-forwarding,no-X11-forwarding,""" \
                 +"""no-agent-forwarding%s %s""" % (tunnels, key.ssh_key)
 
