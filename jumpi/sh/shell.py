@@ -109,6 +109,8 @@ class JumpiShell(cmd.Cmd):
         match = _scp_from_re.match(line)
         if not match is None:
             client = self._open_ssh_client(match.group('target'))
+            if client is None:
+                return False
             channel = client._transport.open_session()
             channel.settimeout(5)
 
@@ -120,6 +122,8 @@ class JumpiShell(cmd.Cmd):
         match = _scp_to_re.match(line)
         if not match is None:
             client = self._open_ssh_client(match.group('target'))
+            if client is None:
+                return False
             channel = client._transport.open_session()
             channel.settimeout(5)
 
@@ -189,6 +193,8 @@ class JumpiShell(cmd.Cmd):
         target_id = line.split(" ", 1)[0].strip()
 
         client = self._open_ssh_client(target_id)
+        if client is None:
+            return False
         channel = client.invoke_shell()
         log.info("session=%s target='%s' - interactive shell invoked" % (
             self.session, target_id))
