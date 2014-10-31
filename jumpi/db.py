@@ -21,15 +21,15 @@ class User(_Base):
 
     target_permissions = relationship("TargetPermission",
         order_by="TargetPermission.id", cascade="all,delete",
-        backref="user_targets")
+        backref="user_targets", lazy=True)
     tunnel_permissions = relationship("TunnelPermission",
         order_by="TunnelPermission.id", cascade="all,delete",
-        backref="user_tunnels")
+        backref="user_tunnels", lazy=True)
     recordings = relationship("Recording",
         order_by="Recording.time.desc()", cascade="all, delete",
-        backref="user_recordings")
+        backref="user_recordings", lazy=True)
     files = relationship("File", order_by="File.filename", cascade="all,delete",
-        backref="user_files")
+        backref="user_files", lazy=True)
 
 class Target(_Base):
     __tablename__ = 'targets'
@@ -39,7 +39,8 @@ class Target(_Base):
     type = Column(String, nullable=False)
 
     permissions = relationship("TargetPermission",
-        order_by="TargetPermission.id", cascade="all,delete", backref="targets")
+        order_by="TargetPermission.id", cascade="all,delete", backref="targets",
+        lazy=True)
 
 class Recording(_Base):
     __tablename__ = 'recordings'
@@ -52,7 +53,8 @@ class Recording(_Base):
     duration = Column(Integer, nullable=False, default=0)
     time = Column(DateTime(timezone="UTC"), nullable=False)
 
-    user = relationship("User", backref=backref('user_recordings', order_by=id))
+    user = relationship("User", backref=backref('user_recordings', order_by=id,
+        lazy='subquery'))
 
 class File(_Base):
     __tablename__ = 'files'
@@ -64,7 +66,7 @@ class File(_Base):
     size = Column(Integer, nullable=False)
 
     user = relationship("User",
-        backref=backref('user_files', order_by=filename))
+        backref=backref('user_files', order_by=filename, lazy='subquery'))
 
 class TargetPermission(_Base):
     __tablename__ = 'target_permissions'
@@ -73,8 +75,10 @@ class TargetPermission(_Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     target_id = Column(String, ForeignKey("targets.id"))
 
-    user = relationship("User", backref=backref('user_targets', order_by=id))
-    target = relationship("Target", backref=backref('targets', order_by=id))
+    user = relationship("User", backref=backref('user_targets', order_by=id,
+        lazy='subquery'))
+    target = relationship("Target", backref=backref('targets', order_by=id,
+        lazy='subquery'))
 
 class Tunnel(_Base):
     __tablename__ = 'tunnels'
@@ -85,7 +89,7 @@ class Tunnel(_Base):
 
     permissions = relationship("TunnelPermission",
         order_by="TunnelPermission.id", cascade="all,delete",
-        backref="tunnels")
+        backref="tunnels", lazy=True)
 
 class TunnelPermission(_Base):
     __tablename__ = 'tunnel_permissions'
@@ -94,8 +98,10 @@ class TunnelPermission(_Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     tunnel_id = Column(Integer, ForeignKey("tunnels.id"))
 
-    user = relationship("User", backref=backref('user_tunnels', order_by=id))
-    tunnel = relationship("Tunnel", backref=backref('tunnels', order_by=id))
+    user = relationship("User", backref=backref('user_tunnels', order_by=id,
+        lazy='subquery'))
+    tunnel = relationship("Tunnel", backref=backref('tunnels', order_by=id,
+        lazy='subquery'))
 
 try:
     import pwd

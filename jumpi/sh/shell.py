@@ -124,6 +124,11 @@ class JumpiShell(cmd.Cmd):
 
             scpc_receive(channel, match.group('path'), self.user, self.session)
             channel.close()
+
+            # update state in filelist of user
+            session = Session.object_session(self.user)
+            session.refresh(self.user) # should trigger reload
+
             return False
 
         # server mode
@@ -155,10 +160,10 @@ class JumpiShell(cmd.Cmd):
                 num = round(num / 1024.0, 1)
                 extension = "G"
 
-            return "%d%s" % (num, extension)
+            return ("%d%s" % (num, extension)).rjust(7)
 
         for file in self.user.files:
-            print "%s   %s\t%s" % (file.created, _pretify_size(file.size),
+            print "%s %s\t%s" % (file.created, _pretify_size(file.size),
                 file.basename)
 
     def do_ssh(self, line):
