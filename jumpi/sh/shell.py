@@ -54,27 +54,7 @@ class JumpiShell(cmd.Cmd):
         finally:
             termios.tcsetattr(sys.stdin, termios.TCSADRAIN, oldtty)
 
-    def do_exit(self, line):
-        return True
-
-    def do_scp(self, line):
-        opts = scp_parse_command(line)
-        if opts["t"]:
-            scp_receive(self.user, self.session)
-            return False
-        if opts["f"]:
-            scp_send(self.user, self.session, opts["path"], opts["r"])
-            return False
-
-        log.error("session=%s unable to parse scp line '%s' %s" % (
-            self.session, line, str(opts)))
-
-    def do_ls(self, line):
-        for file in self.user.files:
-            print file.basename, file.filename
-
-    def do_ssh(self, line):
-        target_id = line.split(" ", 1)[0].strip()
+    def _open_ssh_client(self, target_id):
         session = Session()
         perm = session.query(TargetPermission).filter_by(
             user_id=self.user.id, target_id=target_id).first()
@@ -106,6 +86,32 @@ class JumpiShell(cmd.Cmd):
         else:
             client.connect(port = perm.target.port, username = username,
                 hostname = hostname, password = secret)
+
+        return client
+
+    def do_exit(self, line):
+        return True
+
+    def do_scp(self, line):
+        opts = scp_parse_command(line)
+        if opts["t"]:
+            scp_receive(self.user, self.session)
+            return False
+        if opts["f"]:
+            scp_send(self.user, self.session, opts["path"], opts["r"])
+            return False
+
+        log.error("session=%s unable to parse scp line '%s' %s" % (
+            self.session, line, str(opts)))
+
+    def do_ls(self, line):
+        for file in self.user.files:
+            print file.basename, file.filename
+
+    def do_ssh(self, line):
+        target_id = line.split(" ", 1)[0].strip()
+
+        client = self._open_ssh_client(target_id)
         channel = client.invoke_shell()
         log.info("session=%s target='%s' - interactive shell invoked" % (
             self.session, target_id))
