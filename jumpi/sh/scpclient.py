@@ -1,6 +1,7 @@
 #-*- coding: utf-8 -*-
 
 from jumpi.sh.scpserver import SCPServer, SCPException
+from jumpi.sh import log
 
 class ChannelSocket(object):
     def __init__(self, channel):
