@@ -136,6 +136,7 @@ class JumpiFile(object):
             user_id = self.user.id,
             basename = self.path,
             filename = self.file,
+            size = self.len,
             created = datetime.datetime.now()
         )
         session = Session()
@@ -154,10 +155,10 @@ class SCPServer(object):
     CMD_WARN = b"\x01\n"
     CMD_ERR = b"\x02\n"
 
-
-    def __init__(self, socket, user):
+    def __init__(self, socket, user, session):
         self.socket = socket
         self.user = user
+        self.session = session
         self._dirstack = []
 
     def _confirm(self):
@@ -182,6 +183,9 @@ class SCPServer(object):
 
         path = os.path.join("/".join(self._dirstack), filename)
         fp = JumpiFile(path, self.user, JumpiFile.O_WRITE, 0600)
+        log.info("session=%s scp receiving file='%s' length=%d mode=%s " \
+            "local='%s'" % (self.session, filename, size, match.group('mode'),
+            fp.file))
 
         while size > 0:
             step = (size, 4096)[size > 4096]
@@ -281,12 +285,14 @@ class SCPServer(object):
         for file in self.user.files:
             match = match_re.match(file.basename)
             if not match is None:
+                log.info("session=%s scp sending file='%s' size=%d" % (
+                    self.session, file.basename, file.size))
                 self._send_file(file.basename, recursive)
 
 def scp_receive(user, session):
     try:
         socket = StdSocket()
-        server = SCPServer(socket, user)
+        server = SCPServer(socket, user, session)
         server.receive()
     except SCPException as exc:
         log.error("session=%s scp recv failure msg=\"%s\"" % (session, exc.msg))
@@ -294,7 +300,7 @@ def scp_receive(user, session):
 def scp_send(user, session, path, recursive=False):
     try:
         socket = StdSocket()
-        server = SCPServer(socket, user)
+        server = SCPServer(socket, user, session)
         server.send(path, recursive)
     except SCPException as exc:
         log.error("session=%s scp send failure msg=\"%s\"" % (session, exc.msg))

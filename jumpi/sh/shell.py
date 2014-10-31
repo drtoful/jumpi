@@ -102,6 +102,8 @@ class JumpiShell(cmd.Cmd):
         return True
 
     def do_scp(self, line):
+        log.info("session=%s invoked 'scp %s'" % (self.session, line))
+
         # client mode
         match = _scp_from_re.match(line)
         if not match is None:
@@ -110,7 +112,7 @@ class JumpiShell(cmd.Cmd):
             channel.settimeout(5)
 
             scpc_send(channel, match.group('file'), match.group('path'),
-                self.user)
+                self.user, self.session)
             channel.close()
             return False
 
@@ -120,7 +122,7 @@ class JumpiShell(cmd.Cmd):
             channel = client._transport.open_session()
             channel.settimeout(5)
 
-            scpc_receive(channel, match.group('path'), self.user)
+            scpc_receive(channel, match.group('path'), self.user, self.session)
             channel.close()
             return False
 
@@ -136,8 +138,7 @@ class JumpiShell(cmd.Cmd):
             scp_send(self.user, self.session, opts["path"], opts["r"])
             return False
 
-        log.error("session=%s unable to parse scp line '%s'" % (
-            self.session, line))
+        log.error("session=%s unable to parse scp line" % self.session)
 
     def do_ls(self, line):
         for file in self.user.files:

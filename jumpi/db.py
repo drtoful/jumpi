@@ -61,6 +61,7 @@ class File(_Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     basename = Column(String, nullable=False)
     created = Column(DateTime(timezone="UTC"), nullable=False)
+    size = Column(Integer, nullable=False)
 
     user = relationship("User",
         backref=backref('user_files', order_by=filename))

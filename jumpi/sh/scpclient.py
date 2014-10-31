@@ -32,24 +32,26 @@ class ChannelSocket(object):
         self.channel.sendall(data)
 
 
-def scpc_send(channel, file, path, user):
+def scpc_send(channel, file, path, user, session):
     try:
         socket = ChannelSocket(channel)
-        server = SCPServer(socket, user)
+        server = SCPServer(socket, user, session)
 
         channel.exec_command("scp -r -t %s" % path)
         server._confirm() # wait for OK of remote
         server.send(file, True)
     except SCPException as exc:
-        pass
+        log.error("session=%s scp client send failure " \
+            "msg=\"%s\"" % (session, exc.msg))
 
-def scpc_receive(channel, path, user):
+def scpc_receive(channel, path, user, session):
     try:
         socket = ChannelSocket(channel)
-        server = SCPServer(socket, user)
+        server = SCPServer(socket, user, session)
 
         channel.exec_command("scp -r -f %s" % path)
         server.receive()
     except SCPException as exc:
-        pass
+        log.error("session=%s scp client recv failure " \
+            "msg=\"%s\"" % (session, exc.msg))
 
