@@ -48,11 +48,25 @@ def unlock():
         log.debug("session=%s agent is already unlocked, ignoring", session)
         return ""
 
+    file = os.path.join(HOME_DIR, "jumpi-agent.cfg")
+    if os.path.isfile(file):
+        parser = ConfigParser.SafeConfigParser()
+        parser.read(file)
+
     try:
         data = request.json
         if not _vault.exists():
             log.info("session=%s key vault does not exist, creating", session)
-            _vault.create(data['passphrase'])
+
+            iterations = 1000
+            complexity = 10
+            if parser:
+                if parser.has_option("vault", "iterations"):
+                    iterations = parser.getint("vault", "iterations")
+                if parser.has_option("vault", "complexity"):
+                    complexity = parser.getint("vault", "complexity")
+
+            _vault.create(data['passphrase'], complexity, iterations)
         _vault.unlock(data['passphrase'])
         if not _vault.is_locked():
             log.info("session=%s key vault successfuly unlocked", session)
