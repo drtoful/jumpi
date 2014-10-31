@@ -5,6 +5,8 @@ import logging
 import random
 import hashlib
 
+from flask import Flask
+
 try:
     import pwd
     HOME_DIR = pwd.getpwuid(os.getuid()).pw_dir
@@ -31,4 +33,10 @@ def get_session_id():
     d.update(r)
     return d.hexdigest()[:8]
 
+def create_app():
+    from jumpi.agent.api import app as api_app
 
+    webapp = Flask(__name__)
+    webapp.register_blueprint(api_app, url_prefix="/")
+
+    return webapp

@@ -4,14 +4,14 @@ import json
 import os
 import ConfigParser
 
-from flask import Flask, request, Response
+from flask import Blueprint, request, Response
 from pyvault import PyVault
 from pyvault.backends.ptree import PyVaultPairtreeBackend
 from pyvault.ciphers.aes import PyVaultCipherAES
 from pyvault.ciphers import cipher_manager
 from jumpi.agent import log, get_session_id, HOME_DIR
 
-app = Flask(__name__)
+app = Blueprint("base", __name__)
 
 class _JumpiAES(PyVaultCipherAES):
     def __init__(self):
