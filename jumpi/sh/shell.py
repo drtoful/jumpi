@@ -1,5 +1,6 @@
 #-*- coding: utf-8 -*-
 
+import os
 import sys
 import cmd
 import paramiko
@@ -145,6 +146,24 @@ class JumpiShell(cmd.Cmd):
 
         log.error("session=%s unable to parse scp line" % self.session)
 
+    def do_rm(self, line):
+        for file in self.user.files:
+            if file.basename == line:
+                log.info("session=%s removing file='%s'" % (
+                    self.session, file.basename))
+
+                # remove from filesystem
+                if os.path.isfile(file.filename):
+                    os.remove(file.filename)
+
+                # refresh user object
+                session = Session.object_session(self.user)
+                session.delete(file)
+                session.commit()
+
+                session.refresh(self.user)
+                return False
+
     def do_ls(self, line):
         def _pretify_size(size):
             extension = ""
@@ -175,6 +194,15 @@ class JumpiShell(cmd.Cmd):
             self.session, target_id))
         self._shell(channel)
         channel.close()
+
+    def complete_rm(self, text, line, start_index, end_index):
+        if text:
+            return [
+                file.basename for file in self.user.files
+                if file.basename.startswith(text)
+            ]
+        else:
+            return self.user.files
 
     def complete_ssh(self, text, line, start_index, end_index):
         if text:
