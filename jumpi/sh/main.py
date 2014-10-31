@@ -82,5 +82,5 @@ You're logged in as: %s
         else:
             recorder.record(shell.onecmd, cmd)
 
-    if not cmd is None and not cmd.startswith("scp"):
+    if cmd is None or cmd.startswith("scp"):
         sig_terminating()
