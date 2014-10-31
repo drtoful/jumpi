@@ -169,10 +169,11 @@ class SCPServer(object):
         if msg[0:1] == SCPServer.CMD_OK:
             return
 
+        code = ord(msg[0:1])
         msg = self.socket.readline()
-        raise SCPException(msg)
+        raise SCPException("%d: %s" % (code, msg))
 
-    def _recv_file(self, line):
+    def _recv_file(self, line, callback=None):
         match = _copy_re.match(line)
         if match is None:
             raise SCPException("invalid command: %s" % line)
@@ -187,6 +188,7 @@ class SCPServer(object):
             "local='%s'" % (self.session, filename, size, match.group('mode'),
             fp.file))
 
+        bytes = 0
         while size > 0:
             step = (size, 4096)[size > 4096]
             data = self.socket.read(step)
@@ -194,11 +196,15 @@ class SCPServer(object):
                 raise SCPException("Error receiving, socket timeout")
             fp.write(data, len(data))
             size -= len(data)
+            bytes += len(data)
 
         self._confirm()
         fp.close()
 
-    def _recv_pushd(self, line):
+        if not callback is None:
+            callback(filename, bytes)
+
+    def _recv_pushd(self, line, callback=None):
         match = _dir_re.match(line)
         if match is None:
             raise SCPException("invalid command: %s" % line)
@@ -206,7 +212,7 @@ class SCPServer(object):
         dirname = match.group('dirname')
         self._dirstack.append(dirname)
 
-    def _recv_popd(self, line):
+    def _recv_popd(self, line, callback=None):
         if line != "E":
             raise SCPException("invalid command: %s" % line)
 
@@ -258,7 +264,7 @@ class SCPServer(object):
         self.socket.write("E\n")
         self._confirm()
 
-    def receive(self):
+    def receive(self, callback=None):
         commands = {b'C': self._recv_file,
                     b'T': lambda x: None,
                     b'D': self._recv_pushd,
@@ -272,11 +278,11 @@ class SCPServer(object):
 
             code = msg[0:1]
             try:
-                commands[code](msg)
+                commands[code](msg, callback)
             except KeyError:
                 raise SCPException("Unknown command: %s" % str(msg).strip())
 
-    def send(self, path, recursive=False):
+    def send(self, path, recursive=False, callback=None):
         # convert '*' in path to regex equivalent '.*'
         path = path.replace('*', '.*')
         match_re = re.compile(path, re.IGNORECASE)
@@ -288,6 +294,8 @@ class SCPServer(object):
                 log.info("session=%s scp sending file='%s' size=%d" % (
                     self.session, file.basename, file.size))
                 self._send_file(file.basename, recursive)
+                if not callback is None:
+                    callback(file.basename, file.size)
 
 def scp_receive(user, session):
     try:

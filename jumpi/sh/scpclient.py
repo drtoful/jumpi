@@ -34,25 +34,31 @@ class ChannelSocket(object):
 
 
 def scpc_send(channel, file, path, user, session):
+    def _callback(filename, size):
+        print "uploaded %s (%d bytes)" % (filename, size)
+
     try:
         socket = ChannelSocket(channel)
         server = SCPServer(socket, user, session)
 
         channel.exec_command("scp -r -t %s" % path)
         server._confirm() # wait for OK of remote
-        server.send(file, True)
+        server.send(file, recursive=True, callback=_callback)
     except SCPException as exc:
         log.error("session=%s scp client send failure " \
-            "msg=\"%s\"" % (session, exc.msg))
+            "msg=\"%s\" file=\"%s\"" % (session, exc.msg, file))
 
 def scpc_receive(channel, path, user, session):
+    def _callback(filename, size):
+        print "downloaded %s (%d bytes)" % (filename, size)
+
     try:
         socket = ChannelSocket(channel)
         server = SCPServer(socket, user, session)
 
         channel.exec_command("scp -r -f %s" % path)
-        server.receive()
+        server.receive(callback=_callback)
     except SCPException as exc:
         log.error("session=%s scp client recv failure " \
-            "msg=\"%s\"" % (session, exc.msg))
+            "msg=\"%s\" file=\"%s\"" % (session, exc.msg, file))
 
