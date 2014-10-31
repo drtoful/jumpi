@@ -141,8 +141,25 @@ class JumpiShell(cmd.Cmd):
         log.error("session=%s unable to parse scp line" % self.session)
 
     def do_ls(self, line):
+        def _pretify_size(size):
+            extension = ""
+            num = size
+
+            if num > 1024:
+                num = round(num / 1024.0, 1)
+                extension = "K"
+            if num > 1024:
+                num = round(num / 1024.0, 1)
+                extension = "M"
+            if num > 1024:
+                num = round(num / 1024.0, 1)
+                extension = "G"
+
+            return "%d%s" % (num, extension)
+
         for file in self.user.files:
-            print file.basename, file.filename
+            print "%s   %s\t%s" % (file.created, _pretify_size(file.size),
+                file.basename)
 
     def do_ssh(self, line):
         target_id = line.split(" ", 1)[0].strip()
