@@ -1,5 +1,12 @@
 #-*- coding: utf-8 -*-
 
+#
+# based on the works of James Bardin's pure python implementation
+# of scp protcol. Licensed under GNU LGPL 2.1.
+#
+# See: https://github.com/jbardin/scp.py
+#
+
 import sys
 import re
 import os
@@ -293,9 +300,9 @@ def scp_send(user, session, path, recursive=False):
         log.error("session=%s scp send failure msg=\"%s\"" % (session, exc.msg))
 
 def scp_parse_command(command):
-    recursive_re = re.compile("\-[^r\-]*r[^r\-\s]*")
-    from_re = re.compile("\-[^f\-]*f[^f\-\s]*")
-    to_re = re.compile("\-[^t\-]*t[^t\-\s]*")
+    recursive_re = re.compile("\-[^r\-\s]*r[^r\-\s]*")
+    from_re = re.compile("\-[^f\-\s]*f[^f\-\s]*")
+    to_re = re.compile("\-[^t\-\s]*t[^t\-\s]*")
     args = shlex.split(command)
 
     return {
