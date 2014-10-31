@@ -4,6 +4,7 @@ import sys
 import cmd
 import paramiko
 import StringIO
+import re
 
 # only works on unix
 import termios
@@ -13,6 +14,14 @@ from jumpi.db import Session, TargetPermission
 from jumpi.sh.agent import Agent
 from jumpi.sh import log, get_session_id
 from jumpi.sh.scpserver import scp_receive, scp_send, scp_parse_command
+from jumpi.sh.scpclient import scpc_receive, scpc_send
+
+_scp_from_re = re.compile(
+    "(?P<file>.*) (?P<target>[^@]*@[^:]*):(?P<path>.*)"
+)
+_scp_to_re = re.compile(
+    "(?P<target>[^@]*@[^:]*):(?P<path>.*?) (?P<file>.*)"
+)
 
 class JumpiShell(cmd.Cmd):
     def __init__(self, user, **kwargs):
@@ -93,7 +102,33 @@ class JumpiShell(cmd.Cmd):
         return True
 
     def do_scp(self, line):
+        # client mode
+        match = _scp_from_re.match(line)
+        if not match is None:
+            client = self._open_ssh_client(match.group('target'))
+            channel = client._transport.open_session()
+            channel.settimeout(5)
+
+            scpc_send(channel, match.group('file'), match.group('path'),
+                self.user)
+            channel.close()
+            return False
+
+        match = _scp_to_re.match(line)
+        if not match is None:
+            client = self._open_ssh_client(match.group('target'))
+            channel = client._transport.open_session()
+            channel.settimeout(5)
+
+            scpc_receive(channel, match.group('path'), self.user)
+            channel.close()
+            return False
+
+        # server mode
         opts = scp_parse_command(line)
+        if opts["t"] and opts["f"]:
+            log.error("session=%s sink and source mode requested")
+            return False
         if opts["t"]:
             scp_receive(self.user, self.session)
             return False
@@ -101,8 +136,8 @@ class JumpiShell(cmd.Cmd):
             scp_send(self.user, self.session, opts["path"], opts["r"])
             return False
 
-        log.error("session=%s unable to parse scp line '%s' %s" % (
-            self.session, line, str(opts)))
+        log.error("session=%s unable to parse scp line '%s'" % (
+            self.session, line))
 
     def do_ls(self, line):
         for file in self.user.files:
