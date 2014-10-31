@@ -1,0 +1,53 @@
+#
+# Configuration for the pyvault secure storage
+#
+[vault]
+# Number of iterations to use when deriving master passphrase from the
+# provided by the unlock operation. The key is derived by using PBKDF2.
+#
+# The number should be chosen so that the unlock operation takes about
+# 1-2 seconds, so that Brute-Force Attempts are slowed down. The default
+# is somewhat optimized for Raspberry Pi's.
+#
+# Once the vault has been created, any change to this value, will have
+# no effect.
+#
+# Default: 1000
+iterations = <integer>
+
+# Complexity for saving bcrypt hash, used to verify the unlock password.
+#
+# The number should be chosen so that the unlock operation takes about
+# 1-2 seconds, so that Brute-Force Attempts are slowed down. The default
+# is somewhat optimized for Raspberry Pi's.
+#
+# Once the vault has been created, any change to this value, will have
+# no effect.
+#
+# Default: 10
+complexity = <integer>
+
+#
+# Configuration for agent service
+#
+[agent]
+# Hostname or IP where to connect for the agent service.
+#
+# Default: 127.0.0.1
+host = <ip|hostname>
+# Port to connect for the agent service.
+#
+# Default: 42000
+port = <integer>
+
+#
+# Configuration for encryption
+#
+[cipher]
+# Number of iterations to use when deriving session keys for encrypting
+# data within the secure storage. The key is derived by using PBKDF2.
+#
+# The default is somewhat optimized for Raspberry Pi's.
+#
+# Default: 1000
+iterations = <integer>
