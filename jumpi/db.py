@@ -110,6 +110,6 @@ except:
     _home = os.path.expanduser("~")
 
 _db_engine = create_engine("sqlite:///%s" % os.path.join(_home, "jumpi.db"))
-_Base.metadata.create_all(_db_engine, checkfirst=True)
+_Base.metadata.create_all(_db_engine)
 
 Session = sessionmaker(bind=_db_engine)

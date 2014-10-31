@@ -37,6 +37,6 @@ def create_app():
     from jumpi.agent.api import app as api_app
 
     webapp = Flask(__name__)
-    webapp.register_blueprint(api_app, url_prefix="/")
+    webapp.register_blueprint(api_app)
 
     return webapp
