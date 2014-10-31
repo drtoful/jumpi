@@ -37,6 +37,11 @@ def scpc_send(channel, file, path, user, session):
     def _callback(filename, size):
         print "uploaded %s (%d bytes)" % (filename, size)
 
+    # path can't be empty, defaults to '.'
+    path = path.strip()
+    if len(path) == 0:
+        path = "."
+
     try:
         socket = ChannelSocket(channel)
         server = SCPServer(socket, user, session)
