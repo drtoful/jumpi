@@ -12,7 +12,6 @@ setup(
     zip_safe=False,
     install_requires=[
         'flask >= 0.9',
-        'python-daemon >= 1.6',
         'sqlalchemy >= 0.9',
         'requests >= 2.2.1',
         'paramiko >= 1.14',

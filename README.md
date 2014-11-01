@@ -16,11 +16,10 @@ The following dependencies are automatically resolved by using the
 above command
 
 * [flask](http://flask.pocoo.org/) >= 0.9
-* [python-daemon](https://pypi.python.org/pypi/python-daemon/) >= 1.6
 * [sqlalchemy](http://www.sqlalchemy.org/) >= 0.9
 * [requests](http://docs.python-requests.org/en/latest/) >= 2.2.1
 * [paramiko](http://www.paramiko.org/) >= 1.14
-* [pyvault](https://github.com/drtoful/pyvault) >= 0.1
+* [pyvault](https://github.com/drtoful/pyvault) >= 0.2
 * [pyte](http://pyte.readthedocs.org/en/latest/) >= 0.4.8
 
 To successfully build and install the dependencies you might install
@@ -67,6 +66,9 @@ reasons.
 Once you login to the Web-UI, configuration should be straight forward. Before
 you edit anything though, you have to unlock the agent. This you can do under
 "System".
+
+The default username and password for the Web-UI are both 'admin'. You can 
+also do this under "System".
 
 ### Encryption
 
