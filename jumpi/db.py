@@ -109,7 +109,40 @@ try:
 except:
     _home = os.path.expanduser("~")
 
-_db_engine = create_engine("sqlite:///%s" % os.path.join(_home, "jumpi.db"))
-_Base.metadata.create_all(_db_engine)
-
+_dburl = "sqlite:///%s" % os.path.join(_home, "jumpi.db")
+_db_engine = create_engine(_dburl)
 Session = sessionmaker(bind=_db_engine)
+
+# alembic operations
+def db_create():
+    from alembic.config import Config
+    from alembic import command
+    from pkg_resources import Requirement, resource_filename
+
+    _Base.metadata.create_all(_db_engine)
+
+    filename = resource_filename(Requirement.parse("jumpi"),"alembic.ini")
+    cfg = Config(filename)
+    cfg.set_main_option("sqlalchemy.url", _dburl)
+    command.stamp(cfg, "head")
+
+def db_upgrade():
+    from alembic.config import Config
+    from alembic import command
+    from pkg_resources import Requirement, resource_filename
+
+    filename = resource_filename(Requirement.parse("jumpi"),"alembic.ini")
+    cfg = Config(filename)
+    cfg.set_main_option("sqlalchemy.url", _dburl)
+    command.upgrade(cfg, "head")
+
+def db_migrate():
+    from alembic.config import Config
+    from alembic import command
+    from pkg_resources import Requirement, resource_filename
+
+    filename = resource_filename(Requirement.parse("jumpi"),"alembic.ini")
+    cfg = Config(filename)
+    cfg.set_main_option("sqlalchemy.url", _dburl)
+    command.revision(cfg, autogenerate=True)
+

@@ -41,6 +41,16 @@ It's discouraged to use an existing user.
     adduser --system --shell /bin/sh --gecos 'ssh jumphost' \
     --group --disabled-password --home /home/jumpi jumpi
 
+After this, you have to initialize the DB. For this login to your newly created
+user (by using 'su') and issue the following command:
+
+    jumpidb-create
+
+If you are upgrading from a previous version you can issue the following
+command instead to get a compatible DB:
+
+    jumpidb-upgrade
+
 Both the Web-UI and the agent are fully compliant WSGI applications. For the agent
 use `from jumpi.agent import create_app`. For the Web-UI use `from jumpi.web import create_app`.
 create\_app is a function, that returns a WSGI application.

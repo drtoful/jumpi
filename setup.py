@@ -1,13 +1,21 @@
 #-*- coding: utf-8 -*-
 
 from setuptools import setup
+from distutils.command.install import INSTALL_SCHEMES
+
+for scheme in INSTALL_SCHEMES.values():
+    scheme['data'] = scheme['purelib']
 
 setup(
     name="jumpi",
     version="0.1",
-    packages=['jumpi', 'jumpi.agent', 'jumpi.web', 'jumpi.sh'],
+    packages=['jumpi', 'jumpi.agent', 'jumpi.web', 'jumpi.sh', 'alembic'],
     package_dir={'jumpi': 'jumpi'},
-    package_data={'jumpi': ['web/templates/*', 'web/static/*']},
+    package_data={
+        'jumpi': ['web/templates/*', 'web/static/*'],
+        'alembic': ['alembic/versions/*.py'],
+    },
+    data_files=[('',['alembic.ini'])],
     include_package_data=True,
     zip_safe=False,
     install_requires=[
@@ -16,7 +24,8 @@ setup(
         'requests >= 2.2.1',
         'paramiko >= 1.14',
         'pyvault >= 0.2',
-        'pyte >= 0.4.8'
+        'pyte >= 0.4.8',
+        'alembic >= 0.6.7'
     ],
     dependency_links=[
         'https://github.com/drtoful/pyvault/tarball/0.2#egg=pyvault-0.2git'
@@ -45,6 +54,8 @@ users to create a simple access control.
     entry_points = {
         'console_scripts': [
             'jumpish = jumpi.sh.main:main',
+            'jumpidb-create = jumpi.db:db_create',
+            'jumpidb-upgrade = jumpi.db:db_upgrade'
         ],
     },
 )
