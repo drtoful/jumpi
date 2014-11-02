@@ -4,15 +4,11 @@ Reference
 jumpi-agent.cfg
 ---------------
 
-.. _jumpi-agent.cfg.ref:
-
 .. include:: ../../conf/jumpi-agent.cfg.ref
    :code:
 
 uWSGI
 -----
-
-.. _uwsgi.ref:
 
 **jumpi-agent.ini**
 
@@ -26,8 +22,6 @@ uWSGI
 
 nginx
 -----
-
-.. _nginx.ref:
 
 .. include:: ../../conf/nginx/jumpi
    :code:
