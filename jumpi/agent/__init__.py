@@ -2,6 +2,7 @@
 
 import os
 import logging
+import logging.handlers
 import random
 import hashlib
 
@@ -20,7 +21,7 @@ _filename = os.path.join(_filename, "agent.log")
 
 _format = logging.Formatter(
     "%(asctime)s %(name)s level=%(levelname)s %(message)s")
-_handler = logging.FileHandler(_filename)
+_handler = logging.handlers.RotatingFileHandler(_filename, 'a', 1*1024*1024, 10)
 _handler.setFormatter(_format)
 
 log = logging.getLogger('jumpi.agent')
