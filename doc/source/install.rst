@@ -4,12 +4,24 @@ Installation and Upgrade Manual
 Source
 ------
 
+In order to build some dependencies you might need to install additional
+packages from your distribution's repository.
+
+::
+
+    aptitude install build-essential python-dev libffi-dev libssl-dev
+
 JumPi can be installed from the sources directly by calling the installation
 routine from the console:
+
+::
 
     python setup.py install
 
 We suggest using `virtualenv <http://virtualenv.readthedocs.org/en/latest/>`_.
+
+You can remove the packages again after installation. They're just needed
+to build the dependencies.
 
 Dependencies
 ------------
