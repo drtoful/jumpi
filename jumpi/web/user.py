@@ -19,7 +19,7 @@ user = Blueprint("user", __name__)
 get = functools.partial(user.route, methods=['GET'])
 post = functools.partial(user.route, methods=['POST'])
 
-_key_re = re.compile("ssh-rsa [a-z0-9+/=]+.*", re.IGNORECASE)
+_key_re = re.compile("ssh-[rd]sa [a-z0-9+/=]+.*", re.IGNORECASE)
 _title_re = re.compile("[^<>{}\[\]]+", re.IGNORECASE)
 _id_re = re.compile("[0-9]+")
 
