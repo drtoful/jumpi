@@ -49,6 +49,7 @@ def unlock():
         return ""
 
     file = os.path.join(HOME_DIR, "jumpi-agent.cfg")
+    parser = None
     if os.path.isfile(file):
         parser = ConfigParser.SafeConfigParser()
         parser.read(file)
