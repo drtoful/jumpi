@@ -10,6 +10,7 @@ $(document).ready(function() {
         $('#add_target_form').toggle();
     });
 
+    $('.form-inline').hide();
     $('.target-edit').hide();
     $('.target-link').click(function() {
         var data = {dbid: $(this).attr("dbid")};
@@ -23,6 +24,8 @@ $(document).ready(function() {
                     $("#avail-"+index+" option[value='"+value.id+"']").remove();
                 });
                 loader[index] = "true";
+                $("#spinner-"+index).hide();
+                $("#form-"+index).show();
             });
         }
 
@@ -30,6 +33,10 @@ $(document).ready(function() {
     });
 
     $('.save-btn').click(function() {
+        if(loader[$(this).attr("index")] != "true") {
+            return;
+        }
+
         var perms = [];
         $("#used-"+$(this).attr("index")+" option").each(function() {
             perms.push($(this).val());
@@ -79,8 +86,9 @@ $(document).ready(function() {
         <div class="list-group-item target-edit">
             <button type="button" class="btn btn-danger btn-xs pull-right del-btn" dbid="{{ target.id }}">delete</button>
             <button type="button" class="btn btn-success btn-xs pull-right save-btn" style="margin-right: 7px;" dbid="{{ target.id }}" index="{{ loop.index }}">save</button>
-            <form class="form-inline" role="form">
-                <h4>User permissions</h4>
+            <h4>User permissions</h4>
+            <div id="spinner-{{loop.index}}"><i class="fa fa-refresh fa-spin"></i></div>
+            <form class="form-inline" role="form" id="form-{{loop.index}}">
                 <div class="form-group">
                     <select class="form-control" multiple="multiple" id="avail-{{ loop.index }}">
                         {% for user in users %}
