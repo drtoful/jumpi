@@ -90,7 +90,7 @@ class File(_Base):
             filename = self.filename,
             user_id = self.user_id,
             basename = self.basename,
-            created = self.created,
+            created = str(self.created),
             size = self.size
         ))
 

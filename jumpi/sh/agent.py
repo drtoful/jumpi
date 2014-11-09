@@ -59,7 +59,7 @@ class User(object):
 
         @property
         def basename(self):
-            return self._data.get('filename', None)
+            return self._data.get('basename', None)
 
         @property
         def created(self):
@@ -245,6 +245,18 @@ class Agent(object):
     def user_files(self, id):
         try:
             req = requests.get("%s/user/%d/files" % (self.url, int(id)))
+            if req.status_code == 200:
+                return req.text
+            return None
+        except requests.exceptions.ConnectionError:
+            return None
+
+
+    def user_files_delete(self, user, id):
+        try:
+            req = requests.delete("%s/user/%d/files" % (self.url, int(user)),
+                data = json.dumps({'id': id}),
+                headers = {'content-type': "application/json; charset=utf-8"})
             if req.status_code == 200:
                 return req.text
             return None

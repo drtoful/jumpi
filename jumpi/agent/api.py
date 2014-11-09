@@ -215,6 +215,25 @@ def user_files(id):
 
     return resp
 
+@app.route("/user/<int:id>/files", methods=['DELETE'])
+def user_files_delete(id):
+    resp = Response()
+    session_id = get_session_id()
+
+    try:
+        data = request.json
+
+        session = Session()
+        file = session.query(File).filter_by(filename=data['id']).first()
+        session.delete(file)
+        session.commit()
+
+        resp_status_code = 200
+    except:
+        resp.status_code = 500
+
+    return resp
+
 @app.route("/user/<int:id>/files", methods=['PUT'])
 def user_files_put(id):
     resp = Response()

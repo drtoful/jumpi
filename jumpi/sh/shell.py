@@ -11,7 +11,6 @@ import re
 import termios
 import tty
 
-from jumpi.db import Session
 from jumpi.sh.agent import Agent
 from jumpi.sh import log, get_session_id
 from jumpi.sh.scpserver import scp_receive, scp_send, scp_parse_command
@@ -131,7 +130,7 @@ class JumpiShell(cmd.Cmd):
             channel.close()
 
             # update state in filelist of user
-            user.refresh()
+            self.user.refresh()
 
             return False
 
@@ -159,12 +158,11 @@ class JumpiShell(cmd.Cmd):
                 if os.path.isfile(file.filename):
                     os.remove(file.filename)
 
-                # refresh user object
-                session = Session.object_session(self.user)
-                session.delete(file)
-                session.commit()
+                # remove from db and refresh user object
+                a = Agent()
+                a.user_files_delete(self.user.id, file.filename)
+                self.user.refresh()
 
-                user.refresh()
                 return False
 
     def do_ls(self, line):
