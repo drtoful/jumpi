@@ -10,6 +10,7 @@ from pyvault.backends.ptree import PyVaultPairtreeBackend
 from pyvault.ciphers.aes import PyVaultCipherAES
 from pyvault.ciphers import cipher_manager
 from jumpi.agent import log, get_session_id, HOME_DIR
+from jumpi.db import Session, User
 
 app = Blueprint("base", __name__)
 
@@ -120,4 +121,45 @@ def put():
     except:
         log.error("session=%s key vault storage exception", session)
         resp.status_code = 500
+    return resp
+
+@app.route("/user/<int:id>/info", methods=['GET'])
+def user_info(id):
+    resp = Response()
+    session = Session()
+    user = session.query(User).filter_by(id=id).first()
+    if user is None:
+        resp.status_code = 404
+    else:
+        resp.status_code = 200
+        resp.data = user.as_json()
+
+    return resp
+
+@app.route("/user/<int:id>/targets", methods=['GET'])
+def user_targets(id):
+    resp = Response()
+    session = Session()
+    user = session.query(User).filter_by(id=id).first()
+    if user is None:
+        resp.status_code = 404
+    else:
+        resp.status_code = 200
+        data = ",".join([x.as_json() for x in user.target_permissions])
+        resp.data = "["+data+"]"
+
+    return resp
+
+@app.route("/user/<int:id>/files", methods=['GET'])
+def user_files(id):
+    resp = Response()
+    session = Session()
+    user = session.query(User).filter_by(id=id).first()
+    if user is None:
+        resp.status_code = 404
+    else:
+        resp.status_code = 200
+        data = ",".join([x.as_json() for x in user.files])
+        resp.data = "["+data+"]"
+
     return resp

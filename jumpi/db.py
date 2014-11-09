@@ -1,6 +1,7 @@
 #-*- coding: utf-8 -*-
 
 import os
+import json
 
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, Sequence, String, DateTime
@@ -30,6 +31,15 @@ class User(_Base):
         backref="user_recordings", lazy=True)
     files = relationship("File", order_by="File.filename", cascade="all,delete",
         backref="user_files", lazy=True)
+
+    def as_json(self):
+        return json.dumps(dict(
+            id = self.id,
+            fullname = self.fullname,
+            ssh_fingerprint = self.ssh_fingerprint,
+            time_added = str(self.time_added),
+            time_lastaccess = str(self.time_lastaccess)
+        ))
 
 class Target(_Base):
     __tablename__ = 'targets'
@@ -68,6 +78,15 @@ class File(_Base):
     user = relationship("User",
         backref=backref('user_files', order_by=filename, lazy='subquery'))
 
+    def as_json(self):
+        return json.dumps(dict(
+            filename = self.filename,
+            user_id = self.user_id,
+            basename = self.basename,
+            created = self.created,
+            size = self.size
+        ))
+
 class TargetPermission(_Base):
     __tablename__ = 'target_permissions'
 
@@ -79,6 +98,13 @@ class TargetPermission(_Base):
         lazy='subquery'))
     target = relationship("Target", backref=backref('targets', order_by=id,
         lazy='subquery'))
+
+    def as_json(self):
+        return json.dumps(dict(
+            id = self.id,
+            user_id = self.user_id,
+            target_id = self.target_id
+        ))
 
 class Tunnel(_Base):
     __tablename__ = 'tunnels'
