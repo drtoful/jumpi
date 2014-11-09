@@ -251,7 +251,7 @@ def user_files_put(id):
         )
 
         session = Session()
-        session.add(recording)
+        session.merge(file)
         session.commit()
         log.info("session=%s adding file for user=%d id=%s",
             session_id, id, file.basename)

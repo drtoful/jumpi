@@ -251,6 +251,16 @@ class Agent(object):
         except requests.exceptions.ConnectionError:
             return None
 
+    def user_files_put(self, user, data):
+        try:
+            req = requests.put("%s/user/%d/files" % (self.url, int(user)),
+                data = json.dumps(data),
+                headers = {'content-type': "application/json; charset=utf-8"})
+            if req.status_code == 200:
+                return req.text
+            return None
+        except requests.exceptions.ConnectionError:
+            return None
 
     def user_files_delete(self, user, id):
         try:
