@@ -52,6 +52,13 @@ class Target(_Base):
         order_by="TargetPermission.id", cascade="all,delete", backref="targets",
         lazy=True)
 
+    def as_json(self):
+        return json.dumps(dict(
+            id = self.id,
+            port = self.port,
+            type = self.type
+        ))
+
 class Recording(_Base):
     __tablename__ = 'recordings'
 

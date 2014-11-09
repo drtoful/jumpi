@@ -9,12 +9,45 @@ from jumpi.sh import HOME_DIR
 
 class User(object):
     class Target(object):
-        def __init__(self, data):
+        class _Target(object):
+            def __init__(self, data):
+                self._data = data
+
+            @property
+            def port(self):
+                return self._data.get('port', 22)
+
+            @property
+            def type(self):
+                return self._data.get('type', "password")
+
+        def __init__(self, data, agent):
             self._data = data
+            self._agent = agent
+            self._target = None
+
+        def _load_target(self):
+            if not self._target is None:
+                return
+
+            if not self.target_id is None:
+                self._target = self._agent.target(self.target_id)
+                if not self._target is None:
+                    self._target = json.loads(self._target)
+                    self._target = User.Target._Target(self._target)
+
+        @property
+        def target(self):
+            self._load_target()
+            return self._target
 
         @property
         def target_id(self):
             return self._data.get('target_id', None)
+
+        @property
+        def user_id(self):
+            return self._data.get('user_id', None)
 
     class File(object):
         def __init__(self, data):
@@ -68,7 +101,8 @@ class User(object):
             self._targets = self.agent.user_targets(self._id)
             if not self._targets is None:
                 self._targets = json.loads(self._targets)
-                self._targets = [User.Target(x) for x in self._targets]
+                self._targets = [User.Target(x, self.agent)
+                    for x in self._targets]
 
     def _load_files(self):
         if self._files is None:
@@ -149,6 +183,17 @@ class Agent(object):
     def retrieve(self, id):
         try:
             req = requests.get("%s/retrieve" % self.url,
+                data = json.dumps({'id': id}),
+                headers = {'content-type': "application/json; charset=utf-8"})
+            if req.status_code == 200:
+                return req.text
+            return None
+        except requests.exceptions.ConnectionError:
+            return None
+
+    def target(self, id):
+        try:
+            req = requests.get("%s/target" % self.url,
                 data = json.dumps({'id': id}),
                 headers = {'content-type': "application/json; charset=utf-8"})
             if req.status_code == 200:

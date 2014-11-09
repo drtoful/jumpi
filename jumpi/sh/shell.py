@@ -11,7 +11,7 @@ import re
 import termios
 import tty
 
-from jumpi.db import Session, TargetPermission
+from jumpi.db import Session
 from jumpi.sh.agent import Agent
 from jumpi.sh import log, get_session_id
 from jumpi.sh.scpserver import scp_receive, scp_send, scp_parse_command
@@ -65,11 +65,10 @@ class JumpiShell(cmd.Cmd):
             termios.tcsetattr(sys.stdin, termios.TCSADRAIN, oldtty)
 
     def _open_ssh_client(self, target_id):
-        session = Session()
-        perm = session.query(TargetPermission).filter_by(
-            user_id=self.user.id, target_id=target_id).first()
+        perm = [x for x in self.user.target_permissions
+            if x.user_id == self.user.id and target_id == target_id]
 
-        if perm is None:
+        if len(perm) == 0:
             log.error("session=%s target='%s' - access denied, user " \
                 "has no permission to access this target" % (
                 self.session, target_id))
@@ -78,6 +77,7 @@ class JumpiShell(cmd.Cmd):
 
         a = Agent()
         secret = a.retrieve(target_id)
+        perm = perm[0]
 
         if secret is None:
             log.error("session=%s target='%s' - access denied, could " \
@@ -131,8 +131,7 @@ class JumpiShell(cmd.Cmd):
             channel.close()
 
             # update state in filelist of user
-            session = Session.object_session(self.user)
-            session.refresh(self.user) # should trigger reload
+            user.refresh()
 
             return False
 
@@ -165,7 +164,7 @@ class JumpiShell(cmd.Cmd):
                 session.delete(file)
                 session.commit()
 
-                session.refresh(self.user)
+                user.refresh()
                 return False
 
     def do_ls(self, line):
