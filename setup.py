@@ -23,7 +23,7 @@ setup(
         'sqlalchemy >= 0.9',
         'requests >= 2.2.1',
         'paramiko >= 1.14',
-        'pyvault >= 0.2',
+        'pyvault >= 0.2.1',
         'pyte >= 0.4.8',
         'alembic >= 0.6.7'
     ],
