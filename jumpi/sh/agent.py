@@ -157,6 +157,28 @@ class Agent(object):
         except requests.exceptions.ConnectionError:
             return None
 
+    def add_recording(self, id, data):
+        try:
+            req = requests.put("%s/user/%d/recording" % (self.url, int(id)),
+                data = json.dumps(data),
+                headers = {'content-type': "application/json; charset=utf-8"})
+            if req.status_code == 200:
+                return req.text
+            return None
+        except requests.exceptions.ConnectionError:
+            return None
+
+    def user_update_info(self, id, data={}):
+        try:
+            req = requests.post("%s/user/%d/info" % (self.url, int(id)),
+                data = json.dumps(data),
+                headers = {'content-type': "application/json; charset=utf-8"})
+            if req.status_code == 200:
+                return req.text
+            return None
+        except requests.exceptions.ConnectionError:
+            return None
+
     def user_info(self, id):
         try:
             req = requests.get("%s/user/%d/info" % (self.url, int(id)))

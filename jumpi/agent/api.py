@@ -1,6 +1,7 @@
 #-*- coding: utf:8 -*-
 
 import json
+import datetime
 import os
 import ConfigParser
 
@@ -10,7 +11,7 @@ from pyvault.backends.ptree import PyVaultPairtreeBackend
 from pyvault.ciphers.aes import PyVaultCipherAES
 from pyvault.ciphers import cipher_manager
 from jumpi.agent import log, get_session_id, HOME_DIR
-from jumpi.db import Session, User
+from jumpi.db import Session, User, Recording, File
 
 app = Blueprint("base", __name__)
 
@@ -136,6 +137,39 @@ def user_info(id):
 
     return resp
 
+@app.route("/user/<int:id>/info", methods=['POST'])
+def user_info_set(id):
+    resp = Response()
+    session = Session()
+    session_id = get_session_id()
+    user = session.query(User).filter_by(id=id).first()
+    if user is None:
+        resp.status_code = 500
+    else:
+        try:
+            data = request.json
+            for key in data.keys():
+                if not hasattr(user, key):
+                    continue
+
+                value = data[key]
+                if key == "time_added" or key == "time_lastaccess":
+                    value = datetime.datetime.strptime(value.split(".")[0],
+                        "%Y-%m-%d %H:%M:%S")
+                setattr(user, key, value)
+                log.info("session=%s updating info for user=%d key=%s value=%s",
+                    session_id, id, key, value)
+
+            session.merge(user)
+            session.commit()
+            resp.status_code = 200
+        except:
+            log.error("session=%s error updating info for user=%d",
+                session_id, id)
+            resp.status_code = 500
+
+    return resp
+
 @app.route("/user/<int:id>/targets", methods=['GET'])
 def user_targets(id):
     resp = Response()
@@ -161,5 +195,67 @@ def user_files(id):
         resp.status_code = 200
         data = ",".join([x.as_json() for x in user.files])
         resp.data = "["+data+"]"
+
+    return resp
+
+@app.route("/user/<int:id>/files", methods=['PUT'])
+def user_files_put(id):
+    resp = Response()
+    session_id = get_session_id()
+
+    try:
+        data = request.json
+
+        file = File(
+            user_id = data['user_id'],
+            basename = data['basename'],
+            filename = data['filename'],
+            size = data['size'],
+            created = datetime.datetime.now()
+        )
+
+        session = Session()
+        session.add(recording)
+        session.commit()
+        log.info("session=%s adding file for user=%d id=%s",
+            session_id, id, file.basename)
+
+        resp.status_code = 200
+    except:
+        log.error("session=%s error adding recording for user=%d",
+            session_id, id)
+        resp.status_code = 500
+
+    return resp
+
+@app.route("/user/<int:id>/recording", methods=['PUT'])
+def user_recording(id):
+    resp = Response()
+    session_id = get_session_id()
+
+    try:
+        data = request.json
+
+        recording = Recording(
+            user_id = data['user_id'],
+            session_id = data['session_id'],
+            duration = data['duration'],
+            width = data['width'],
+            height = data['height'],
+            time = datetime.datetime.strptime(data['time'].split('.')[0],
+                "%Y-%m-%d %H:%M:%S")
+        )
+        session = Session()
+        session.add(recording)
+        session.commit()
+
+        log.info("session=%s adding recording for user=%d id=%s",
+            session_id, id, recording.session_id)
+
+        resp.status_code = 200
+    except:
+        log.error("session=%s error adding recording for user=%d",
+            session_id, id)
+        resp.status_code = 500
 
     return resp

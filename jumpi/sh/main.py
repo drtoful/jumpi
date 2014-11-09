@@ -7,7 +7,6 @@ import datetime
 
 from jumpi.sh.agent import Agent, User
 from jumpi.sh.shell import JumpiShell
-from jumpi.db import Session, Recording
 from jumpi.sh import log
 from jumpi.sh.recorder import Recorder
 
@@ -28,17 +27,15 @@ def main():
         print >>sys.stderr, reason
         return
 
-    session = Session()
-
     # check if users exists
     user = User(a, sys.argv[1])
     if not user.is_valid():
         print >>sys.stderr, "user not found!"
         return
 
-    user.time_lastaccess = datetime.datetime.now()
-    #session.merge(user)
-    #session.commit()
+    a.user_update_info(user.id, {
+        'time_lastaccess': str(datetime.datetime.now())
+    })
 
     intro = """Welcome to JumPi Interactive Shell!
 You're logged in as: %s
@@ -55,18 +52,17 @@ You're logged in as: %s
 
         # save the recording to the users recordings list
         handling = True
-        recording = Recording(
+        recording = dict(
             user_id = user.id,
             session_id = shell.session,
             duration = recorder.recording.duration,
             width = recorder.recording.columns,
             height = recorder.recording.lines,
-            time = start
+            time = str(start)
         )
         id = str(user.id)+"@"+shell.session
         if a.store_data(id, str(recorder.recording)):
-            session.add(recording)
-            session.commit()
+            a.add_recording(user.id, recording)
 
         sys.exit(0)
 
