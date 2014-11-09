@@ -5,9 +5,9 @@ import signal
 import os
 import datetime
 
-from jumpi.sh.agent import Agent
+from jumpi.sh.agent import Agent, User
 from jumpi.sh.shell import JumpiShell
-from jumpi.db import Session, User, Recording
+from jumpi.db import Session, Recording
 from jumpi.sh import log
 from jumpi.sh.recorder import Recorder
 
@@ -19,13 +19,6 @@ def main():
         print >>sys.stderr, "usage: %s <id>" % (sys.argv[0])
         return
 
-    # check if users exists
-    session = Session()
-    user = session.query(User).filter_by(id=sys.argv[1]).first()
-    if user is None:
-        print >>sys.stderr, "user not found!"
-        return
-
     # check if agent is up and running
     a = Agent()
     (resp, reason) = a.ping()
@@ -35,9 +28,17 @@ def main():
         print >>sys.stderr, reason
         return
 
+    session = Session()
+
+    # check if users exists
+    user = User(a, sys.argv[1])
+    if not user.is_valid():
+        print >>sys.stderr, "user not found!"
+        return
+
     user.time_lastaccess = datetime.datetime.now()
-    session.merge(user)
-    session.commit()
+    #session.merge(user)
+    #session.commit()
 
     intro = """Welcome to JumPi Interactive Shell!
 You're logged in as: %s
