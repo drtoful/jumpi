@@ -3,7 +3,6 @@
 import os
 import sys
 import cmd
-import paramiko
 import StringIO
 import re
 
@@ -35,6 +34,7 @@ class JumpiShell(cmd.Cmd):
 
     def _shell(self, chan):
         import select
+        import paramiko
 
         oldtty = termios.tcgetattr(sys.stdin)
         try:
@@ -64,6 +64,8 @@ class JumpiShell(cmd.Cmd):
             termios.tcsetattr(sys.stdin, termios.TCSADRAIN, oldtty)
 
     def _open_ssh_client(self, target_id):
+        import paramiko
+
         perm = [x for x in self.user.target_permissions
             if x.user_id == self.user.id and target_id == target_id]
 
