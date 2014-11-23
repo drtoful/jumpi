@@ -87,27 +87,69 @@ keys:
 
     {"pong": false}
 
-``GET`` /retrieve
------------------
-
-**Parameters**
-
-**Response**
-
-**Example Request**
-
-**Example Response**
-
 ``PUT`` /store
 --------------
 
 **Parameters**
 
++-----------------+-----------------------------------------------+
+|id               |The id for which to put the data from the vault|
+|*string,required*|                                               |
++-----------------+-----------------------------------------------+
+|key              |The data to store                              |
+|*string,required*|                                               |
++-----------------+-----------------------------------------------+
+
 **Response**
 
 **Example Request**
 
+.. code-block:: bash
+
+    http PUT http://127.0.0.1:42000/store id=myid key="secret phrase"
+
 **Example Response**
+
+.. code-block:: http
+
+    HTTP/1.0 200 OK
+    Content-Length: 0
+    Content-Type: text/html; charset=utf-8
+    Date: Sun, 23 Nov 2014 22:15:52 GMT
+    Server: Werkzeug/0.9.6 Python/2.7.6
+
+``GET`` /retrieve
+-----------------
+
+**Parameters**
+
++-----------------+-----------------------------------------------+
+|id               |The id for which to get the data from the vault|
+|*string,required*|                                               |
++-----------------+-----------------------------------------------+
+
+**Response**
+
+**Example Request**
+
+.. code-block:: bash
+
+    http GET http://127.0.0.1:42000/retrieve id=myid
+
+**Example Response**
+
+.. code-block:: http
+
+    HTTP/1.0 200 OK
+    Content-Length: 16
+    Content-Type: text/html; charset=utf-8
+    Date: Sun, 23 Nov 2014 22:21:25 GMT
+    Server: Werkzeug/0.9.6 Python/2.7.6
+
+    +-----------------------------------------+
+    | NOTE: binary data not shown in terminal |
+    +-----------------------------------------+
+
 
 API Reference: Target
 =====================
