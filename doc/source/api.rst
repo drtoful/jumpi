@@ -7,6 +7,12 @@ and the PyVault storage. You can only fully change entries in the DB via the adm
 
 Examples are given as `httpie`_ commands.
 
+The API is mainly used by the JumPi shell process to get access to DB information and
+store/retrieve data from the secure storage.
+
+You could use this API to use in scripts to open SSH connections without knowing
+the password.
+
 .. _httpie: http://httpie.org
 
 Parameters
@@ -35,11 +41,19 @@ By default you can access the agent under the following URL
 Note that the endpoint may differ, if you bound the agent
 to a different port or IP.
 
-Client Errors
--------------
+Datatypes
+---------
 
-Server Errors
--------------
++---------+-------------------------------------------------------------------+
+| string  | Arbitrary character stream                                        |
++---------+-------------------------------------------------------------------+
+| boolean | ``true`` or ``false``                                             |
++---------+-------------------------------------------------------------------+
+| integer | Any number                                                        |
++---------+-------------------------------------------------------------------+
+| date    | Date and Time given as string in the format "YYYY-MM-DD HH:MM:SS" |
++---------+-------------------------------------------------------------------+
+
 
 API Reference
 -------------
