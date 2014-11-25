@@ -43,3 +43,19 @@ of the certificate.
 
 Enable then the configuration by linking (*ln*) the config in sites-enabled and
 then restart nginx.
+
+Virtual Environment
+-------------------
+
+You can install JumPi within a python `Virtual Environment`_. If you do so however, you will
+need to create a wrapper script, that will invoke the JumPi shell under the correct 
+path. Adapt the following snippet and store it under ``/usr/local/bin/jumpish``. Make sure
+it is executable by your JumPi user and that the PATH is correctly setup.
+
+.. code-block:: bash
+
+    #!/bin/bash
+    . /path/to/venv/bin/activate
+    /path/to/venv/bin/jumpish
+
+.. _Virtual Environment: http://virtualenv.readthedocs.org/en/latest/
