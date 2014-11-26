@@ -10,6 +10,12 @@ except:
     HOME_DIR = os.path.expanduser("~")
 
 class JumpiConfig(object):
+    VAULT_ITERATIONS = 500
+    VAULT_COMPLEXITY = 8
+    CIPHER_ITERATIONS = 100
+    AGENT_HOST = "127.0.0.1"
+    AGENT_PORT = 42000
+
     def __init__(self):
         file = os.path.join(HOME_DIR, "jumpi-agent.cfg")
         if os.path.isfile(file):

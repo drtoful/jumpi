@@ -5,7 +5,7 @@ import json
 import os
 import ConfigParser
 
-from jumpi.config import get_config
+from jumpi.config import get_config, JumpiConfig
 
 class User(object):
     class Target(object):
@@ -132,8 +132,8 @@ class User(object):
 class Agent(object):
     def __init__(self):
         config = get_config()
-        host = config.get("agent", "host", "127.0.0.1")
-        port = config.getint("agent", "port", 42000)
+        host = config.get("agent", "host", JumpiConfig.AGENT_HOST)
+        port = config.getint("agent", "port", JumpiConfig.AGENT_PORT)
 
         self.url = "http://%s:%d" % (host, port)
 

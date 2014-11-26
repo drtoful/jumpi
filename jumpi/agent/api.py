@@ -11,7 +11,7 @@ from pyvault.backends.ptree import PyVaultPairtreeBackend
 from pyvault.ciphers.aes import PyVaultCipherAES
 from pyvault.ciphers import cipher_manager
 from jumpi.agent import log, get_session_id
-from jumpi.config import HOME_DIR, get_config
+from jumpi.config import HOME_DIR, get_config, JumpiConfig
 from jumpi.db import Session, User, Recording, File, Target
 from jumpi.agent.utils import json_validate, json_required
 from jumpi.agent.utils import compose_json_response
@@ -24,7 +24,7 @@ class _JumpiAES(PyVaultCipherAES):
 
         config = get_config()
         self.KEYDERIV_ITERATIONS = config.getint(
-            "cipher", "iterations", 1000)
+            "cipher", "iterations", JumpiConfig.CIPHER_ITERATIONS)
 
     @property
     def id(self):
@@ -57,8 +57,10 @@ def unlock():
         if not _vault.exists():
             log.info("session=%s key vault does not exist, creating", session)
 
-            iterations = config.getint("vault", "iterations", 1000)
-            complexity = config.getint("vault", "complexity", 10)
+            iterations = config.getint("vault", "iterations",
+                JumpiConfig.VAULT_ITERATIONS)
+            complexity = config.getint("vault", "complexity",
+                JumpiConfig.VAULT_COMPLEXITY)
 
             _vault.create(data['passphrase'], complexity, iterations)
         _vault.unlock(data['passphrase'])

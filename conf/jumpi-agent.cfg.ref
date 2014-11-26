@@ -12,7 +12,7 @@
 # Once the vault has been created, any change to this value, will have
 # no effect.
 #
-# Default: 1000
+# Default: 500
 iterations = <integer>
 
 # Complexity for saving bcrypt hash, used to verify the unlock password.
@@ -24,7 +24,7 @@ iterations = <integer>
 # Once the vault has been created, any change to this value, will have
 # no effect.
 #
-# Default: 10
+# Default: 8
 complexity = <integer>
 
 #
@@ -49,5 +49,5 @@ port = <integer>
 #
 # The default is somewhat optimized for Raspberry Pi's.
 #
-# Default: 1000
+# Default: 100
 iterations = <integer>
