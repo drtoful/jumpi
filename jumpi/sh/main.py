@@ -23,7 +23,7 @@ def main():
     (resp, reason) = a.ping()
     if not resp:
         log.error("user='%s' tried to log in, but agent is locked" %(
-            user.fullname))
+            sys.argv[1]))
         print >>sys.stderr, reason
         return
 
