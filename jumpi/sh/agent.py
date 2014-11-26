@@ -145,10 +145,10 @@ class Agent(object):
 
     def ping(self):
         try:
-            req = requests.get("%s/ping" % self.url)
+            req = requests.get("%s/vault/status" % self.url)
             if req.status_code == 200:
                 data = req.json()
-                if data['pong']:
+                if data['locked']:
                     return (False, "Agent is locked, unlock first")
                 return (True, None)
             return (False, "Agent response error")
@@ -157,7 +157,7 @@ class Agent(object):
 
     def unlock(self, passphrase):
         try:
-            req = requests.post("%s/unlock" % self.url,
+            req = requests.post("%s/vault/unlock" % self.url,
                 data = json.dumps({'passphrase': passphrase}),
                 headers = {'content-type': "application/json; charset=utf-8"})
             if req.status_code == 200:

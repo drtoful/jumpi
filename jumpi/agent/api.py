@@ -12,6 +12,8 @@ from pyvault.ciphers.aes import PyVaultCipherAES
 from pyvault.ciphers import cipher_manager
 from jumpi.agent import log, get_session_id, HOME_DIR
 from jumpi.db import Session, User, Recording, File, Target
+from jumpi.agent.utils import json_validate, json_required
+from jumpi.agent.utils import compose_json_response
 
 app = Blueprint("base", __name__)
 
@@ -38,12 +40,14 @@ _backend = PyVaultPairtreeBackend(
 _vault = PyVault(_backend)
 cipher_manager.register("aes-jumpi", _JumpiAES())
 
-@app.route("/unlock", methods=['POST'])
+@app.route("/vault/unlock", methods=['POST'])
+@json_required()
+@json_validate(required=["passphrase"], passphrase="string")
 def unlock():
     resp = Response()
     session = get_session_id()
 
-    log.info("session=%s POST /unlock", session)
+    log.info("session=%s POST /vault/unlock", session)
 
     # don't do uneccesary unlocks
     if not _vault.is_locked():
@@ -84,9 +88,9 @@ def unlock():
 
     return resp
 
-@app.route("/ping", methods=['GET'])
+@app.route("/vault/status", methods=['GET'])
 def ping():
-    return json.dumps({"pong": _vault.is_locked()})
+    return compose_json_response(200, locked=_vault.is_locked())
 
 @app.route("/retrieve", methods=['GET'])
 def get():

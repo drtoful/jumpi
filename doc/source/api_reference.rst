@@ -1,8 +1,8 @@
 API Reference
 =============
 
-``POST`` /unlock
-----------------
+``POST`` /vault/unlock
+----------------------
 
 JumPi uses `PyVault`_ to securely store passwords and RSA private
 keys to access SSH targets. The storage needs to be unlocked before
@@ -47,12 +47,10 @@ parameters.
     Content-Length: 0
     Content-Type: text/html; charset=utf-8
 
-``GET`` /ping
--------------
+``GET`` /vault/status
+---------------------
 
-Queries the `PyVault`_ storage to check if the storage is locked
-or not.
-
+Queries the `PyVault`_ storage to check its status.
 **Parameters**
 
 *no parameters*
@@ -63,7 +61,7 @@ The response contains a JSON object with the following
 keys:
 
 +------------+------------------------------------------------+
-| | pong     |``true`` if vault is locked, ``false`` otherwise|
+| | locked   |``true`` if vault is locked, ``false`` otherwise|
 | | *boolean*|                                                |
 +------------+------------------------------------------------+
 
@@ -71,17 +69,20 @@ keys:
 
 .. code-block:: bash
 
-    http GET http://127.0.0.1:42000/ping
+    http GET http://127.0.0.1:42000/vault/status
 
 **Example Response**
 
 .. code-block:: http
 
     HTTP/1.0 200 OK
-    Content-Length: 15
-    Content-Type: text/html; charset=utf-8
+    Content-Length: 17
+    Content-Type: application/json; charset=utf-8
 
-    {"pong": false}
+    {
+        "locked": false
+    }
+
 
 ``PUT`` /store
 --------------
