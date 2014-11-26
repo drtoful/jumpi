@@ -10,7 +10,8 @@ from pyvault import PyVault
 from pyvault.backends.ptree import PyVaultPairtreeBackend
 from pyvault.ciphers.aes import PyVaultCipherAES
 from pyvault.ciphers import cipher_manager
-from jumpi.agent import log, get_session_id, HOME_DIR
+from jumpi.agent import log, get_session_id
+from jumpi.config import HOME_DIR, get_config
 from jumpi.db import Session, User, Recording, File, Target
 from jumpi.agent.utils import json_validate, json_required
 from jumpi.agent.utils import compose_json_response
@@ -21,14 +22,9 @@ class _JumpiAES(PyVaultCipherAES):
     def __init__(self):
         PyVaultCipherAES.__init__(self)
 
-        file = os.path.join(HOME_DIR, "jumpi-agent.cfg")
-        if os.path.isfile(file):
-            parser = ConfigParser.SafeConfigParser()
-            parser.read(file)
-
-            if parser.has_option("cipher", "iterations"):
-                self.KEYDERIV_ITERATIONS = parser.getint(
-                    "cipher", "iterations")
+        config = get_config()
+        self.KEYDERIV_ITERATIONS = config.getint(
+            "cipher", "iterations", 1000)
 
     @property
     def id(self):
@@ -54,24 +50,15 @@ def unlock():
         log.debug("session=%s agent is already unlocked, ignoring", session)
         return ""
 
-    file = os.path.join(HOME_DIR, "jumpi-agent.cfg")
-    parser = None
-    if os.path.isfile(file):
-        parser = ConfigParser.SafeConfigParser()
-        parser.read(file)
+    config = get_config()
 
     try:
         data = request.json
         if not _vault.exists():
             log.info("session=%s key vault does not exist, creating", session)
 
-            iterations = 1000
-            complexity = 10
-            if parser:
-                if parser.has_option("vault", "iterations"):
-                    iterations = parser.getint("vault", "iterations")
-                if parser.has_option("vault", "complexity"):
-                    complexity = parser.getint("vault", "complexity")
+            iterations = config.getint("vault", "iterations", 1000)
+            complexity = config.getint("vault", "complexity", 10)
 
             _vault.create(data['passphrase'], complexity, iterations)
         _vault.unlock(data['passphrase'])

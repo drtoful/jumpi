@@ -14,7 +14,8 @@ import hashlib
 import datetime
 import shlex
 
-from jumpi.sh import log, HOME_DIR
+from jumpi.config import HOME_DIR
+from jumpi.sh import log
 from jumpi.sh.agent import Agent
 
 _copy_re = re.compile(

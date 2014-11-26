@@ -3,13 +3,8 @@
 import os
 import bcrypt
 
-try:
-    import pwd
-    HOME_DIR = pwd.getpwuid(os.getuid()).pw_dir
-except:
-    HOME_DIR = os.path.expanduser("~")
-
 from pyvault.utils import constant_time_compare
+from jumpi.config import HOME_DIR
 
 class WebPass(object):
     def __init__(self):
@@ -32,5 +27,4 @@ class WebPass(object):
 
         with open(self.filename, "w") as fp:
             print >>fp, self.hash
-
 

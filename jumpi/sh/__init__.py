@@ -6,11 +6,7 @@ import logging.handlers
 import random
 import hashlib
 
-try:
-    import pwd
-    HOME_DIR = pwd.getpwuid(os.getuid()).pw_dir
-except:
-    HOME_DIR = os.path.expanduser("~")
+from jumpi.config import HOME_DIR
 
 _filename = os.path.join(HOME_DIR, "log")
 if not os.path.isdir(_filename):

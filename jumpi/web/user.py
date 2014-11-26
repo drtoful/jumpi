@@ -11,7 +11,7 @@ import struct
 
 from flask import Blueprint, redirect, url_for, request, make_response
 from jumpi.web.decorators import templated, authenticated, jsonr
-from jumpi.web.utils import HOME_DIR
+from jumpi.config import HOME_DIR
 from jumpi.db import Session, User
 from jumpi.sh.agent import Agent
 

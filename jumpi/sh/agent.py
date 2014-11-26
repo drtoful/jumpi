@@ -5,7 +5,7 @@ import json
 import os
 import ConfigParser
 
-from jumpi.sh import HOME_DIR
+from jumpi.config import get_config
 
 class User(object):
     class Target(object):
@@ -130,16 +130,10 @@ class User(object):
         return self._files
 
 class Agent(object):
-    def __init__(self, host="127.0.0.1", port=42000):
-        file = os.path.join(HOME_DIR, "jumpi-agent.cfg")
-        if os.path.isfile(file):
-            parser = ConfigParser.SafeConfigParser()
-            parser.read(file)
-
-            if parser.has_option("agent", "host"):
-                host = parser.get("agent", "host")
-            if parser.has_option("agent", "port"):
-                port = parser.getint("agent", "port")
+    def __init__(self):
+        config = get_config()
+        host = config.get("agent", "host", "127.0.0.1")
+        port = config.getint("agent", "port", 42000)
 
         self.url = "http://%s:%d" % (host, port)
 
