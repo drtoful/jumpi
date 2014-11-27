@@ -15,7 +15,9 @@ post = functools.partial(target.route, methods=['POST'])
 
 _username_re = re.compile("^[a-z][a-z0-9_\-]+", re.IGNORECASE)
 _hostname_re = re.compile(
-    "^(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}$",
+    "^(?=.{1,255}$)[0-9A-Za-z](?:(?:[0-9A-Za-z]|-)"+
+    "{0,61}[0-9A-Za-z])?(?:\.[0-9A-Za-z](?:(?:[0-9A-Za-z]|-)"+
+    "{0,61}[0-9A-Za-z])?)*\.?$",
     re.IGNORECASE
 )
 _ip_re = re.compile("[0-9\.]+")
