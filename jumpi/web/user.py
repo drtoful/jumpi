@@ -8,11 +8,12 @@ import datetime
 import base64
 import json
 import struct
+import math
 
 from flask import Blueprint, redirect, url_for, request, make_response
 from jumpi.web.decorators import templated, authenticated, jsonr
 from jumpi.config import HOME_DIR
-from jumpi.db import Session, User
+from jumpi.db import Session, User, Recording
 from jumpi.sh.agent import Vault
 
 user = Blueprint("user", __name__)
@@ -113,7 +114,33 @@ def recordings(id):
     if user is None:
         return redirect(url_for('user.index'))
 
-    return dict(user=user)
+    page = 0
+    if not request.args.get('p', None) is None:
+        try:
+            page = int(request.args['p'])
+        except:
+            pass
+
+    # do not scroll before the beginning
+    if page < 0:
+        page = 0
+
+    total = session.query(Recording).filter_by(user_id=id).count()
+    end = int(math.floor(total / float(10)))
+    if page > end:
+        page = end
+
+    start = page*10
+    recordings = session.query(Recording).filter_by(user_id=id). \
+        order_by(Recording.time.desc()).offset(start).limit(10)
+
+
+    return dict(
+        user=user,
+        recordings=recordings,
+        page=page,
+        end=end
+    )
 
 @get("/<int:id>/recordings/json")
 @authenticated

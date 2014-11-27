@@ -32,7 +32,7 @@
     </div>
 
     <div class="list-group">
-{% for rec in user.recordings %}
+{% for rec in recordings %}
         <div class="list-group-item target-link">
             <span class="fa-stack">
                 <i class="fa fa-square fa-stack-2x"></i>
@@ -47,6 +47,11 @@
             </div>
         </div>
 {% endfor %}
+        <ul class="pager">
+            <li class="previous {% if page<1 %}disabled{% endif %}"><a href="{{ url_for('user.recordings', id=user.id) }}?p={{ page-1 }}"><span aria-hidden="true">&larr;</span> Newer</a></li>
+            <li>{{ page+1 }} / {{ end+1 }}</li>
+            <li class="next {% if page>=end %}disabled{% endif %}"><a href="{{ url_for('user.recordings', id=user.id) }}?p={{ page+1 }}">Older <span aria-hidden="true">&rarr;</span></a></li>
+        </ul>
     </div>
 </div>
 
