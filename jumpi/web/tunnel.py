@@ -8,7 +8,6 @@ from flask import Blueprint, redirect, url_for, request
 from jumpi.web.decorators import templated, jsonr, authenticated
 from jumpi.web.user import _recompute_authorized_keys
 from jumpi.db import Session, Tunnel, User, TunnelPermission
-from jumpi.sh.agent import Agent
 
 tunnel = Blueprint("tunnel", __name__)
 get = functools.partial(tunnel.route, methods=['GET'])

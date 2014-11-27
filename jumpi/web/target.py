@@ -7,7 +7,7 @@ import re
 from flask import Blueprint, redirect, url_for, request
 from jumpi.web.decorators import templated, jsonr, authenticated
 from jumpi.db import Session, Target, User, TargetPermission
-from jumpi.sh.agent import Agent
+from jumpi.sh.agent import Vault
 
 target = Blueprint("target", __name__)
 get = functools.partial(target.route, methods=['GET'])
@@ -103,8 +103,8 @@ def add_target():
         port = int(port)
     )
 
-    agent = Agent()
-    if agent.store(username, hostname, key):
+    vault = Vault()
+    if vault.store(username+"@"+hostname, key):
         session = Session()
         session.merge(target)
         session.commit()

@@ -5,7 +5,7 @@ import signal
 import os
 import datetime
 
-from jumpi.sh.agent import Agent, User
+from jumpi.sh.agent import Vault, User, format_datetime
 from jumpi.sh.shell import JumpiShell
 from jumpi.sh import log
 from jumpi.sh.recorder import Recorder
@@ -19,23 +19,20 @@ def main():
         return
 
     # check if agent is up and running
-    a = Agent()
-    (resp, reason) = a.ping()
-    if not resp:
+    vault = Vault()
+    if vault.is_locked():
         log.error("user='%s' tried to log in, but agent is locked" %(
             sys.argv[1]))
-        print >>sys.stderr, reason
+        print >>sys.stderr, "Agent is locked!"
         return
 
     # check if users exists
-    user = User(a, sys.argv[1])
+    user = User(sys.argv[1])
     if not user.is_valid():
-        print >>sys.stderr, "user not found!"
+        print >>sys.stderr, "User not found!"
         return
 
-    a.user_update_info(user.id, {
-        'time_lastaccess': str(datetime.datetime.now())
-    })
+    user.update('time_lastaccess', format_datetime(datetime.datetime.now()))
 
     intro = """Welcome to JumPi Interactive Shell!
 You're logged in as: %s
@@ -55,14 +52,14 @@ You're logged in as: %s
         recording = dict(
             user_id = user.id,
             session_id = shell.session,
-            duration = recorder.recording.duration,
-            width = recorder.recording.columns,
-            height = recorder.recording.lines,
-            time = str(start)
+            duration = int(recorder.recording.duration),
+            width = int(recorder.recording.columns),
+            height = int(recorder.recording.lines),
+            time = format_datetime(start)
         )
         id = str(user.id)+"@"+shell.session
-        if a.store_data(id, str(recorder.recording)):
-            a.add_recording(user.id, recording)
+        vault.store(id, str(recorder.recording))
+        user.add_recording(**recording)
 
         sys.exit(0)
 

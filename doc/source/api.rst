@@ -1,8 +1,8 @@
 Agent API
 =========
 
-The Agent API is currently in a very unstable state and may (and probably will, since it's 
-very ugly at the moment) change. You can use the API to access some information in the DB 
+The Agent API is currently in a very unstable state and may change. 
+You can use the API to access some information in the DB 
 and the PyVault storage. You can only fully change entries in the DB via the admin GUI.
 
 Examples are given as `httpie`_ commands.

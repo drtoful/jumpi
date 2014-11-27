@@ -10,7 +10,7 @@ import re
 import termios
 import tty
 
-from jumpi.sh.agent import Agent
+from jumpi.sh.agent import File, Vault
 from jumpi.sh import log, get_session_id
 from jumpi.sh.scpserver import scp_receive, scp_send, scp_parse_command
 from jumpi.sh.scpclient import scpc_receive, scpc_send
@@ -76,8 +76,8 @@ class JumpiShell(cmd.Cmd):
             print "Permission denied!"
             return
 
-        a = Agent()
-        secret = a.retrieve(target_id)
+        vault = Vault()
+        secret = vault.retrieve(target_id)
         perm = perm[0]
 
         if secret is None:
@@ -132,7 +132,7 @@ class JumpiShell(cmd.Cmd):
             channel.close()
 
             # update state in filelist of user
-            self.user.refresh()
+            self.user.load()
 
             return False
 
@@ -161,9 +161,9 @@ class JumpiShell(cmd.Cmd):
                     os.remove(file.filename)
 
                 # remove from db and refresh user object
-                a = Agent()
-                a.user_files_delete(self.user.id, file.filename)
-                self.user.refresh()
+                file = File(file.filename)
+                file.delete()
+                self.user.load()
 
                 return False
 

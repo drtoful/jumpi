@@ -16,7 +16,7 @@ import shlex
 
 from jumpi.config import HOME_DIR
 from jumpi.sh import log
-from jumpi.sh.agent import Agent
+from jumpi.sh.agent import File
 
 _copy_re = re.compile(
     "C(?P<mode>\d{4}) (?P<length>\d+) (?P<filename>.*)",
@@ -133,13 +133,13 @@ class JumpiFile(object):
             return
 
         # store file in db
-        a = Agent()
-        a.user_files_put(self.user.id, dict(
+        File.save(
             user_id = self.user.id,
             basename = self.path,
             filename = self.file,
-            size = self.len
-        ))
+            size = self.len,
+            created = "1970-01-01 00:00:00"
+        )
 
         # change filemode
         #TODO

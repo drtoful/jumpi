@@ -6,12 +6,15 @@ import re
 from flask import request, make_response
 from functools import wraps
 
-_date_re = re.compile("\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}")
+_date_re = re.compile("^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$")
 
 def compose_json_response(status, **msg):
-    content = json.dumps(msg)
+    content = ""
+    if len(msg) > 0:
+        content = json.dumps(msg)
 
     response = make_response(content)
+    response.status_code = status
     response.headers['Content-Type'] = "application/json; charset=utf-8"
     return response
 

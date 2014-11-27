@@ -33,13 +33,13 @@ class User(_Base):
         backref="user_files", lazy=True)
 
     def as_json(self):
-        return json.dumps(dict(
+        return dict(
             id = self.id,
             fullname = self.fullname,
             ssh_fingerprint = self.ssh_fingerprint,
             time_added = str(self.time_added),
             time_lastaccess = str(self.time_lastaccess)
-        ))
+        )
 
 class Target(_Base):
     __tablename__ = 'targets'
@@ -53,11 +53,11 @@ class Target(_Base):
         lazy=True)
 
     def as_json(self):
-        return json.dumps(dict(
+        return dict(
             id = self.id,
             port = self.port,
             type = self.type
-        ))
+        )
 
 class Recording(_Base):
     __tablename__ = 'recordings'
@@ -86,13 +86,13 @@ class File(_Base):
         backref=backref('user_files', order_by=filename, lazy='subquery'))
 
     def as_json(self):
-        return json.dumps(dict(
+        return dict(
             filename = self.filename,
             user_id = self.user_id,
             basename = self.basename,
             created = str(self.created),
             size = self.size
-        ))
+        )
 
 class TargetPermission(_Base):
     __tablename__ = 'target_permissions'
@@ -107,11 +107,11 @@ class TargetPermission(_Base):
         lazy='subquery'))
 
     def as_json(self):
-        return json.dumps(dict(
+        return dict(
             id = self.id,
             user_id = self.user_id,
             target_id = self.target_id
-        ))
+        )
 
 class Tunnel(_Base):
     __tablename__ = 'tunnels'

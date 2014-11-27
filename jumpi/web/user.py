@@ -13,7 +13,7 @@ from flask import Blueprint, redirect, url_for, request, make_response
 from jumpi.web.decorators import templated, authenticated, jsonr
 from jumpi.config import HOME_DIR
 from jumpi.db import Session, User
-from jumpi.sh.agent import Agent
+from jumpi.sh.agent import Vault
 
 user = Blueprint("user", __name__)
 get = functools.partial(user.route, methods=['GET'])
@@ -124,12 +124,12 @@ def recordings_json(id):
     if session_id is None:
         return redirect(url_for('user.index'))
 
-    agent = Agent()
-    data = agent.retrieve(str(id)+"@"+session_id)
+    vault = Vault()
+    data = vault.retrieve(str(id)+"@"+session_id)
     if data is None:
         return redirect(url_for('user.index'))
 
-    return data.rstrip("\x00")
+    return data
 
 @get("/<int:id>/recordings/ttyrec")
 @authenticated
@@ -138,12 +138,12 @@ def recordings_ttyrec(id):
     if session_id is None:
         return redirect(url_for('user.index'))
 
-    agent = Agent()
-    data = agent.retrieve(str(id)+"@"+session_id)
+    vault = Vault()
+    data = vault.retrieve(str(id)+"@"+session_id)
     if data is None:
         return redirect(url_for('user.index'))
 
-    data = json.loads(data.rstrip("\x00"))
+    data = json.loads(data)
     result = []
     for rec in data['recording']:
         if not "raw" in rec:

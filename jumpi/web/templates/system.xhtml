@@ -17,14 +17,13 @@
         <strong>Agent connectivity</strong>
     </div>
     <div class="panel-body">
-        {% if agent[0] %}
+        {% if agent %}
         <i class="fa fa-check fa-4x text-success pull-left"></i>
         <p>Connection to agent established</p>
         {% else %}
         <i class="fa fa-ban fa-4x text-danger pull-left"></i>
         <button type="button" class="btn btn-danger btn-xs pull-right" id="unlock_button">unlock</button>
         <p>Can't connect to the agent</p>
-        <p class="text-danger">{{ agent[1] }}</p>
         {% endif %}
     </div>
 </div>

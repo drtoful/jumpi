@@ -8,7 +8,7 @@ import os
 from flask import render_template, request, session, redirect, url_for, app
 from flask import make_response
 from functools import wraps
-from jumpi.sh.agent import Agent
+from jumpi.sh.agent import Vault
 from jumpi.web.utils import WebPass
 
 def authenticated(f):
@@ -56,9 +56,8 @@ def templated(template):
             context['session'] = session
 
             # status of agent
-            agent = Agent()
-            resp, _ = agent.ping()
-            context['agent_unlock'] = resp
+            vault = Vault()
+            context['agent_unlock'] = not vault.is_locked()
 
             # render the context using given template
             response = render_template(template, **context)

@@ -1,133 +1,11 @@
 #-*- coding: utf-8 -*-
 
-import requests
 import json
-import os
-import ConfigParser
-
+import datetime
 from jumpi.config import get_config, JumpiConfig
 
-class User(object):
-    class Target(object):
-        class _Target(object):
-            def __init__(self, data):
-                self._data = data
-
-            @property
-            def port(self):
-                return self._data.get('port', 22)
-
-            @property
-            def type(self):
-                return self._data.get('type', "password")
-
-        def __init__(self, data, agent):
-            self._data = data
-            self._agent = agent
-            self._target = None
-
-        def _load_target(self):
-            if not self._target is None:
-                return
-
-            if not self.target_id is None:
-                self._target = self._agent.target(self.target_id)
-                if not self._target is None:
-                    self._target = json.loads(self._target)
-                    self._target = User.Target._Target(self._target)
-
-        @property
-        def target(self):
-            self._load_target()
-            return self._target
-
-        @property
-        def target_id(self):
-            return self._data.get('target_id', None)
-
-        @property
-        def user_id(self):
-            return self._data.get('user_id', None)
-
-    class File(object):
-        def __init__(self, data):
-            self._data = data
-
-        @property
-        def filename(self):
-            return self._data.get('filename', None)
-
-        @property
-        def basename(self):
-            return self._data.get('basename', None)
-
-        @property
-        def created(self):
-            return self._data.get('created', None)
-
-        @property
-        def size(self):
-            return self._data.get('size', None)
-
-    def __init__(self, agent, id):
-        self.agent = agent
-        self._id = id
-
-        self._info = None
-        self._targets = None
-        self._files = None
-
-        self.refresh()
-
-    def refresh(self):
-        self._load_info()
-        if not self._targets is None:
-            self._targets = None
-            self._load_targets()
-        if not self._files is None:
-            self._files = None
-            self._load_files()
-
-    def is_valid(self):
-        return not self._info is None
-
-    def _load_info(self):
-        self._info = self.agent.user_info(self._id)
-        if not self._info is None:
-            self._info = json.loads(self._info)
-
-    def _load_targets(self):
-        if self._targets is None:
-            self._targets = self.agent.user_targets(self._id)
-            if not self._targets is None:
-                self._targets = json.loads(self._targets)
-                self._targets = [User.Target(x, self.agent)
-                    for x in self._targets]
-
-    def _load_files(self):
-        if self._files is None:
-            self._files = self.agent.user_files(self._id)
-            if not self._files is None:
-                self._files = json.loads(self._files)
-                self._files = [User.File(x) for x in self._files]
-
-    @property
-    def id(self):
-        return self._info.get('id', None)
-
-    @property
-    def fullname(self):
-        return self._info.get('fullname', None)
-
-    @property
-    def target_permissions(self):
-        self._load_targets()
-        return self._targets
-
-    @property
-    def files(self):
-        self._load_files()
-        return self._files
+def format_datetime(value):
+    return value.strftime("%Y-%m-%d %H:%M:%S")
 
 class Agent(object):
     def __init__(self):
@@ -137,133 +15,208 @@ class Agent(object):
 
         self.url = "http://%s:%d" % (host, port)
 
-    def ping(self):
+    def _doit(self, method, endpoint, **arguments):
+        import requests
+
+        func = {
+            "GET": requests.get,
+            "POST": requests.post,
+            "PUT": requests.put,
+            "PATCH": requests.patch,
+            "DELETE": requests.delete
+        }.get(method, requests.get)
+
         try:
-            req = requests.get("%s/vault/status" % self.url)
+            req = func("%s%s" % (self.url, endpoint),
+                data = json.dumps(arguments),
+                headers = {'content-type': "application/json; charset=utf-8"})
             if req.status_code == 200:
-                data = req.json()
-                if data['locked']:
-                    return (False, "Agent is locked, unlock first")
-                return (True, None)
-            return (False, "Agent response error")
+                try:
+                    return req.json()
+                except ValueError:
+                    return req.text
         except requests.exceptions.ConnectionError:
-            return (False, "Could not contact agent")
+            pass
+
+        return None
+
+    def get(self, endpoint, **arguments):
+        return self._doit("GET", endpoint, **arguments)
+
+    def post(self, endpoint, **arguments):
+        return self._doit("POST", endpoint, **arguments)
+
+    def put(self, endpoint, **arguments):
+        return self._doit("PUT", endpoint, **arguments)
+
+    def patch(self, endpoint, **arguments):
+        return self._doit("PATCH", endpoint, **arguments)
+
+    def delete(self, endpoint, **arguments):
+        return self._doit("DELETE", endpoint, **arguments)
+
+class Target(object):
+    def __init__(self, id):
+        self.id = id
+        self._data = None
+
+    def load(self):
+        if not self._data is None:
+            return
+
+        agent = Agent()
+        req = agent.get("/target", id=self.id)
+        self._data = req
+
+    @property
+    def port(self):
+        return self._data.get('port', 22)
+
+    @property
+    def type(self):
+        return self._data.get('type', "password")
+
+class File(object):
+    def __init__(self, filename):
+        self.filename = filename
+        self._data = None
+
+    @classmethod
+    def save(self, **data):
+        agent = Agent()
+        req = agent.put("/file", **data)
+        return not req is None
+
+    @property
+    def basename(self):
+        return self._data.get('basename', None)
+
+    @property
+    def created(self):
+        return self._data.get('created', None)
+
+    @property
+    def size(self):
+        return self._data.get('size', None)
+
+    def delete(self):
+        agent = Agent()
+        req = agent.delete("/file", filename=self.filename)
+        return not req is None
+
+class Permission(object):
+    def __init__(self, id):
+        self.id = id
+        self._data = None
+
+    @property
+    def target(self):
+        result = Target(self.target_id)
+        result.load()
+        return result
+
+    @property
+    def target_id(self):
+        return self._data.get('target_id', None)
+
+    @property
+    def user_id(self):
+        return self._data.get('user_id', None)
+
+class User(object):
+    def __init__(self, id):
+        try:
+            self.id = int(id)
+        except ValueError:
+            self.id = -1
+        self.load()
+
+    def load(self):
+        self._load_info()
+        self._load_files()
+        self._load_permissions()
+
+    def is_valid(self):
+        return not self._info is None
+
+    def _load_info(self):
+        agent = Agent()
+        self._info = agent.get("/user/info", user=self.id)
+
+    def _load_permissions(self):
+        agent = Agent()
+        req = agent.get("/user/permissions", user=self.id)
+
+        self._permissions = []
+        if not req is None:
+            def _perm(data):
+                result = Permission(data.get('id', 0))
+                result._data = data
+                return result
+
+            self._permissions = [_perm(x) for x in req['permissions']]
+
+    def _load_files(self):
+        agent = Agent()
+        req = agent.get("/user/files", user=self.id)
+
+        self._files = []
+        if not req is None:
+            def _file(data):
+                result = File(data.get('filename', ""))
+                result._data = data
+                return result
+
+            self._files = [_file(x) for x in req['files']]
+
+    @property
+    def fullname(self):
+        return self._info.get('fullname', None)
+
+    @property
+    def target_permissions(self):
+        return self._permissions
+
+    @property
+    def files(self):
+        return self._files
+
+    def update(self, key, value):
+        agent = Agent()
+        req = agent.patch("/user/info", **dict(
+            [("user", self.id), (key,value)]))
+        return not req is None
+
+    def add_recording(self, **data):
+        agent = Agent()
+        req = agent.put("/recording", **data)
+        return not req is None
+
+class Vault(object):
+    def __init__(self):
+        self.agent = Agent()
+
+    def is_locked(self):
+        status = self.agent.get("/vault/status")
+        if not status is None:
+            return status.get('locked', True)
+        return True
 
     def unlock(self, passphrase):
-        try:
-            req = requests.post("%s/vault/unlock" % self.url,
-                data = json.dumps({'passphrase': passphrase}),
-                headers = {'content-type': "application/json; charset=utf-8"})
-            if req.status_code == 200:
-                return True
-            return False
-        except requests.exceptions.ConnectionError:
-            return False
+        req = self.agent.post("/vault/unlock", passphrase=passphrase)
+        if not req is None:
+            return True
+        return False
 
-    def store_data(self, id, data):
-        try:
-            req = requests.put("%s/store" % self.url,
-                data = json.dumps({'id': id, 'key': data}),
-                headers = {'content-type': "application/json; charset=utf-8"})
-            if req.status_code == 200:
-                return True
-            return False
-        except requests.exceptions.ConnectionError:
-            return False
+    def store(self, key, value):
+        req = self.agent.put("/vault/store", key=key, value=value)
+        if not req is None:
+            return True
+        return False
 
-    def store(self, username, hostname, key):
-        return self.store_data(username+"@"+hostname, key)
-
-    def retrieve(self, id):
-        try:
-            req = requests.get("%s/retrieve" % self.url,
-                data = json.dumps({'id': id}),
-                headers = {'content-type': "application/json; charset=utf-8"})
-            if req.status_code == 200:
-                return req.text
-            return None
-        except requests.exceptions.ConnectionError:
-            return None
-
-    def target(self, id):
-        try:
-            req = requests.get("%s/target" % self.url,
-                data = json.dumps({'id': id}),
-                headers = {'content-type': "application/json; charset=utf-8"})
-            if req.status_code == 200:
-                return req.text
-            return None
-        except requests.exceptions.ConnectionError:
-            return None
-
-    def add_recording(self, id, data):
-        try:
-            req = requests.put("%s/user/%d/recording" % (self.url, int(id)),
-                data = json.dumps(data),
-                headers = {'content-type': "application/json; charset=utf-8"})
-            if req.status_code == 200:
-                return req.text
-            return None
-        except requests.exceptions.ConnectionError:
-            return None
-
-    def user_update_info(self, id, data={}):
-        try:
-            req = requests.post("%s/user/%d/info" % (self.url, int(id)),
-                data = json.dumps(data),
-                headers = {'content-type': "application/json; charset=utf-8"})
-            if req.status_code == 200:
-                return req.text
-            return None
-        except requests.exceptions.ConnectionError:
-            return None
-
-    def user_info(self, id):
-        try:
-            req = requests.get("%s/user/%d/info" % (self.url, int(id)))
-            if req.status_code == 200:
-                return req.text
-            return None
-        except requests.exceptions.ConnectionError:
-            return None
-
-    def user_targets(self, id):
-        try:
-            req = requests.get("%s/user/%d/targets" % (self.url, int(id)))
-            if req.status_code == 200:
-                return req.text
-            return None
-        except requests.exceptions.ConnectionError:
-            return None
-
-    def user_files(self, id):
-        try:
-            req = requests.get("%s/user/%d/files" % (self.url, int(id)))
-            if req.status_code == 200:
-                return req.text
-            return None
-        except requests.exceptions.ConnectionError:
-            return None
-
-    def user_files_put(self, user, data):
-        try:
-            req = requests.put("%s/user/%d/files" % (self.url, int(user)),
-                data = json.dumps(data),
-                headers = {'content-type': "application/json; charset=utf-8"})
-            if req.status_code == 200:
-                return req.text
-            return None
-        except requests.exceptions.ConnectionError:
-            return None
-
-    def user_files_delete(self, user, id):
-        try:
-            req = requests.delete("%s/user/%d/files" % (self.url, int(user)),
-                data = json.dumps({'id': id}),
-                headers = {'content-type': "application/json; charset=utf-8"})
-            if req.status_code == 200:
-                return req.text
-            return None
-        except requests.exceptions.ConnectionError:
-            return None
+    def retrieve(self, key):
+        req = self.agent.get("/vault/retrieve", key=key)
+        if req is None:
+            return req
+        return req['value']
 

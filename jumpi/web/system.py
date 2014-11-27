@@ -5,7 +5,7 @@ import SecureString
 
 from flask import Blueprint, redirect, url_for, request, session
 from jumpi.web.decorators import templated, authenticated
-from jumpi.sh.agent import Agent
+from jumpi.sh.agent import Vault
 from jumpi.web.utils import WebPass
 
 system = Blueprint("system", __name__)
@@ -16,17 +16,16 @@ post = functools.partial(system.route, methods=['POST'])
 @authenticated
 @templated("system.xhtml")
 def index():
-    agent = Agent()
+    vault = Vault()
     return dict(
-        agent = agent.ping()
+        agent = not vault.is_locked()
     )
 
 @post("/unlock")
 @authenticated
 def unlock():
-    agent = Agent()
-
-    agent.unlock(request.form['passphrase'])
+    vault = Vault()
+    vault.unlock(request.form['passphrase'])
     SecureString.clearmem(request.form['passphrase'])
 
     return redirect(url_for('system.index'))
