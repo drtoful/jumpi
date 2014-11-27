@@ -40,6 +40,7 @@ You're logged in as: %s
 
     shell = JumpiShell(user)
     recorder = Recorder()
+    cmd = os.environ.get('SSH_ORIGINAL_COMMAND', None)
 
     def sig_terminating(*args, **kwargs):
         global handling
@@ -66,7 +67,6 @@ You're logged in as: %s
     signal.signal(signal.SIGTERM, sig_terminating)
     signal.signal(signal.SIGHUP, sig_terminating)
 
-    cmd = os.environ.get('SSH_ORIGINAL_COMMAND', None)
     start = datetime.datetime.now()
     if cmd is None:
         recorder.record(shell.cmdloop, intro=intro)
@@ -76,5 +76,5 @@ You're logged in as: %s
         else:
             recorder.record(shell.onecmd, cmd)
 
-    if cmd is None or cmd.startswith("scp"):
+    if cmd is None or not cmd.startswith("scp"):
         sig_terminating()

@@ -28,7 +28,7 @@ setup(
         'alembic >= 0.6.7'
     ],
     dependency_links=[
-        'https://github.com/drtoful/pyvault/tarball/0.2#egg=pyvault-0.2git'
+        'https://github.com/drtoful/pyvault/tarball/0.2.1#egg=pyvault-0.2.1git'
     ],
 
     # package metadata
