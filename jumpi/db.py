@@ -7,6 +7,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, Sequence, String, DateTime, Boolean
 from sqlalchemy import ForeignKey, create_engine
 from sqlalchemy.orm import sessionmaker, backref, relationship
+from jumpi.sh.agent import format_datetime
 
 _Base = declarative_base()
 
@@ -38,8 +39,8 @@ class User(_Base):
             id = self.id,
             fullname = self.fullname,
             ssh_fingerprint = self.ssh_fingerprint,
-            time_added = str(self.time_added),
-            time_lastaccess = str(self.time_lastaccess),
+            time_added = format_datetime(self.time_added),
+            time_lastaccess = format_datetime(self.time_lastaccess),
             twofactor = self.twofactor
         )
 
@@ -92,7 +93,7 @@ class File(_Base):
             filename = self.filename,
             user_id = self.user_id,
             basename = self.basename,
-            created = str(self.created),
+            created = format_datetime(self.created),
             size = self.size
         )
 
