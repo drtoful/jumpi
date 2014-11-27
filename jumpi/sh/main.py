@@ -32,6 +32,16 @@ def main():
         print >>sys.stderr, "User not found!"
         return
 
+    # check for OTP if activated
+    if user.need_otp():
+        from jumpi.sh.twofactor import TwoFactor
+        twofactor = TwoFactor(user)
+        result = twofactor.validate()
+        if not result:
+            log.error("failed otp for user=%d", user.id)
+            print >>sys.stderr, "Token wrong"
+            return
+
     user.update('time_lastaccess', format_datetime(datetime.datetime.now()))
 
     intro = """Welcome to JumPi Interactive Shell!

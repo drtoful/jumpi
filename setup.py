@@ -25,7 +25,9 @@ setup(
         'paramiko >= 1.14',
         'pyvault >= 0.2.1',
         'pyte >= 0.4.8',
-        'alembic >= 0.6.7'
+        'alembic >= 0.6.7',
+        'pyotp >= 1.3.0',
+        'qrcode >= 5.1'
     ],
     dependency_links=[
         'https://github.com/drtoful/pyvault/tarball/0.2.1#egg=pyvault-0.2.1git'

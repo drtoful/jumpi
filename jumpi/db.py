@@ -4,7 +4,7 @@ import os
 import json
 
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, Sequence, String, DateTime
+from sqlalchemy import Column, Integer, Sequence, String, DateTime, Boolean
 from sqlalchemy import ForeignKey, create_engine
 from sqlalchemy.orm import sessionmaker, backref, relationship
 
@@ -19,6 +19,7 @@ class User(_Base):
     ssh_fingerprint = Column(String, nullable=False)
     time_added = Column(DateTime(timezone="UTC"), nullable=False)
     time_lastaccess = Column(DateTime(timezone="UTC"))
+    twofactor = Column(Boolean, default=False)
 
     target_permissions = relationship("TargetPermission",
         order_by="TargetPermission.id", cascade="all,delete",
@@ -38,7 +39,8 @@ class User(_Base):
             fullname = self.fullname,
             ssh_fingerprint = self.ssh_fingerprint,
             time_added = str(self.time_added),
-            time_lastaccess = str(self.time_lastaccess)
+            time_lastaccess = str(self.time_lastaccess),
+            twofactor = self.twofactor
         )
 
 class Target(_Base):

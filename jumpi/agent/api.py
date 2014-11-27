@@ -4,6 +4,7 @@ import json
 import datetime
 import os
 import ConfigParser
+import pyotp
 
 from flask import Blueprint, request
 from pyvault import PyVault
@@ -186,7 +187,8 @@ def user_info():
 
 @app.route("/user/info", methods=['PATCH'])
 @json_required()
-@json_validate(required=["user"], user="integer", time_lastaccess="date")
+@json_validate(required=["user"], user="integer", time_lastaccess="date",
+    twofactor="boolean")
 def user_info_set():
     session = Session()
     session_id = get_session_id()
@@ -200,6 +202,9 @@ def user_info_set():
     if not data.get('time_lastaccess', None) is None:
         user.time_lastaccess = datetime.datetime.strptime(
             data['time_lastaccess'], "%Y-%m-%d %H:%M:%S")
+
+    if not data.get('twofactor', None) is None:
+        user.twofactor = data['twofactor']
 
     try:
         session.merge(user)

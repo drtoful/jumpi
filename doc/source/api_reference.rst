@@ -268,6 +268,9 @@ keys:
 | | time_lastaccess|Date and Time the User has connected via SSH       |
 | | *date*         |                                                   |
 +------------------+---------------------------------------------------+
+| | twofactor      |'true' if the User has activated TwoFactor         |
+| | *boolean*      |Authentication, false otherwise                    |
++------------------+---------------------------------------------------+
 
 **Example Request**
 
@@ -304,6 +307,9 @@ Updates some values in the DB for the User.
 +---------------------+---------------------------------------+
 | | time_lastaccess   |                                       |
 | | *date,optional*   |                                       |
++---------------------+---------------------------------------+
+| | twofactor         |                                       |
+| | *boolean,optional*|                                       |
 +---------------------+---------------------------------------+
 
 Updates all provided optional parameters.

@@ -139,6 +139,9 @@ class User(object):
     def is_valid(self):
         return not self._info is None
 
+    def need_otp(self):
+        return self._info.get('twofactor', False)
+
     def _load_info(self):
         agent = Agent()
         self._info = agent.get("/user/info", user=self.id)
