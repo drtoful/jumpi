@@ -211,6 +211,10 @@ class JumpiShell(cmd.Cmd):
                 print "TwoFactor Authentication deactivated"
             return False
 
+        if self.user.need_otp():
+            print "Two Factor Authentication already setup"
+            return False
+
         result = twofac.setup(type)
         if result:
             print "TwoFactor Authentication successfully setup!"
