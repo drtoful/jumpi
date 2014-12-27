@@ -18,16 +18,24 @@ class JumpiConfig(object):
 
     def __init__(self):
         file = os.path.join(HOME_DIR, "jumpi-agent.cfg")
+
+        self.parser = None
         if os.path.isfile(file):
             self.parser = ConfigParser.SafeConfigParser()
             self.parser.read(file)
 
     def getint(self, section, key, default=None):
+        if self.parser is None:
+            return default
+
         if self.parser.has_option(section, key):
             return self.parser.getint(section, key)
         return default
 
     def get(self, section, key, default=None):
+        if self.parser is None:
+            return default
+
         if self.parser.has_option(section, key):
             return self.parser.get(section, key)
         return default
