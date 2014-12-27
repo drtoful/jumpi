@@ -22,8 +22,6 @@ above command
 * [pyvault](https://github.com/drtoful/pyvault) >= 0.2.1
 * [pyte](http://pyte.readthedocs.org/en/latest/) >= 0.4.8
 * [alembic](http://alembic.readthedocs.org/en/latest/) >= 0.6.7
-* [pyotp](https://github.com/nathforge/pyotp) >= 1.3.0
-* [qrcode](https://github.com/lincolnloop/python-qrcode) >= 5.1
 
 To successfully build and install the dependencies you might install
 additional packages using your distributions package manager. For the

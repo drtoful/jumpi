@@ -6,6 +6,13 @@ from distutils.command.install import INSTALL_SCHEMES
 for scheme in INSTALL_SCHEMES.values():
     scheme['data'] = scheme['purelib']
 
+extras = {
+    'with_otp_google': [
+        'pyotp >= 1.3.0',
+        'qrcode >= 5.1'
+    ]
+}
+
 setup(
     name="jumpi",
     version="0.1",
@@ -26,9 +33,8 @@ setup(
         'pyvault >= 0.2.1',
         'pyte >= 0.4.8',
         'alembic >= 0.6.7',
-        'pyotp >= 1.3.0',
-        'qrcode >= 5.1'
     ],
+    extras_require=extras,
     dependency_links=[
         'https://github.com/drtoful/pyvault/tarball/0.2.1#egg=pyvault-0.2.1git'
     ],
