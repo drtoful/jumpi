@@ -201,25 +201,15 @@ class JumpiShell(cmd.Cmd):
         channel.close()
 
     def do_2fa(self, line):
-        from jumpi.sh.twofactor import TwoFactor
-
+        from jumpi.sh.twofactor import authenticator
         type = line.split(" ",1)[0].strip()
-        twofac = TwoFactor(self.user)
 
-        if type == "remove":
-            if twofac.remove():
-                print "TwoFactor Authentication deactivated"
-            return False
-
-        if self.user.need_otp():
-            print "Two Factor Authentication already setup"
-            return False
-
-        result = twofac.setup(type)
-        if result:
-            print "TwoFactor Authentication successfully setup!"
-        else:
-            print "Error in TwoFactor Authentication setup, try again"
+        if type == "setup":
+            result = authenticator.setup(self.user)
+            if result:
+                print "TwoFactor Authentication successfully setup!"
+            else:
+                print "Error in TwoFactor Authentication setup!"
 
     def complete_rm(self, text, line, start_index, end_index):
         if text:
