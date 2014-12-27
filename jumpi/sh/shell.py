@@ -208,6 +208,10 @@ class JumpiShell(cmd.Cmd):
             else:
                 print "Error in TwoFactor Authentication setup!"
 
+        if type == "remove":
+            self.user.update("twofactor", False)
+            log.info("user=%d has removed 2fa", self.user.id)
+
     def complete_rm(self, text, line, start_index, end_index):
         if text:
             return [
