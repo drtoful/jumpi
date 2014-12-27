@@ -4,7 +4,6 @@ import json
 import datetime
 import os
 import ConfigParser
-import pyotp
 
 from flask import Blueprint, request
 from pyvault import PyVault
