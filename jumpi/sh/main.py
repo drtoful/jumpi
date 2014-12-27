@@ -21,8 +21,8 @@ def main():
     # check if agent is up and running
     vault = Vault()
     if vault.is_locked():
-        log.error("user='%s' tried to log in, but agent is locked" %(
-            sys.argv[1]))
+        log.error("user='%s' tried to log in, but agent is locked",
+            sys.argv[1])
         print >>sys.stderr, "Agent is locked!"
         return
 

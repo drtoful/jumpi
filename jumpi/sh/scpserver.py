@@ -153,10 +153,9 @@ class SCPServer(object):
     CMD_WARN = b"\x01\n"
     CMD_ERR = b"\x02\n"
 
-    def __init__(self, socket, user, session):
+    def __init__(self, socket, user):
         self.socket = socket
         self.user = user
-        self.session = session
         self._dirstack = []
 
     def _confirm(self):
@@ -182,9 +181,9 @@ class SCPServer(object):
 
         path = os.path.join("/".join(self._dirstack), filename)
         fp = JumpiFile(path, self.user, JumpiFile.O_WRITE, 0600)
-        log.info("session=%s scp receiving file='%s' length=%d mode=%s " \
-            "local='%s'" % (self.session, filename, size, match.group('mode'),
-            fp.file))
+        log.info("scp receiving file='%s' length=%d mode=%s " \
+            "local='%s'",filename, size, match.group('mode'),
+            fp.file)
 
         bytes = 0
         while size > 0:
@@ -289,27 +288,27 @@ class SCPServer(object):
         for file in self.user.files:
             match = match_re.match(file.basename)
             if not match is None:
-                log.info("session=%s scp sending file='%s' size=%d" % (
-                    self.session, file.basename, file.size))
+                log.info("scp sending file='%s' size=%d",
+                    file.basename, file.size)
                 self._send_file(file.basename, recursive)
                 if not callback is None:
                     callback(file.basename, file.size)
 
-def scp_receive(user, session):
+def scp_receive(user):
     try:
         socket = StdSocket()
-        server = SCPServer(socket, user, session)
+        server = SCPServer(socket, user)
         server.receive()
     except SCPException as exc:
-        log.error("session=%s scp recv failure msg=\"%s\"" % (session, exc.msg))
+        log.error("scp recv failure msg=\"%s\"", exc.msg)
 
-def scp_send(user, session, path, recursive=False):
+def scp_send(user, path, recursive=False):
     try:
         socket = StdSocket()
-        server = SCPServer(socket, user, session)
+        server = SCPServer(socket, user)
         server.send(path, recursive)
     except SCPException as exc:
-        log.error("session=%s scp send failure msg=\"%s\"" % (session, exc.msg))
+        log.error("scp send failure msg=\"%s\"", exc.msg)
 
 def scp_parse_command(command):
     recursive_re = re.compile("\-[^r\-\s]*r[^r\-\s]*")
