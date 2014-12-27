@@ -34,12 +34,10 @@ def main():
 
     # check for OTP if activated
     if user.need_otp():
-        from jumpi.sh.twofactor import TwoFactor
-        twofactor = TwoFactor(user)
-        result = twofactor.validate()
+        from jumpi.sh.twofactor import authenticator
+        result = authenticator.validate(user)
         if not result:
             log.error("failed otp for user=%d", user.id)
-            print >>sys.stderr, "Token wrong"
             return
 
     user.update('time_lastaccess', format_datetime(datetime.datetime.now()))

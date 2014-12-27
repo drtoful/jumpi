@@ -5,6 +5,7 @@ import datetime
 import calendar
 
 from jumpi.sh.agent import Vault
+from jumpi.sh import log
 
 def print_qrcode(value):
     """
@@ -60,6 +61,8 @@ class GoogleHOTPAuthenticator(object):
             req = vault.store(str(user.id)+"@otp", json.dumps(data))
             if not req:
                 return False
+        else:
+            print "Invalid Token!"
 
         return result
 
@@ -80,6 +83,7 @@ class GoogleHOTPAuthenticator(object):
         print_qrcode(otp.provisioning_uri("jumpi/"+user.fullname))
         req = self.validate(user)
         if req:
+            log.info("user=%d has activated 2fa 'hotp'", user.id)
             user.update("twofactor", True)
 
         return req
@@ -117,6 +121,8 @@ class GoogleTOTPAuthenticator(object):
             req = vault.store(str(user.id)+"@otp", json.dumps(data))
             if not req:
                 return False
+        else:
+            print "Invalid Token!"
 
         return result
 
@@ -138,6 +144,7 @@ class GoogleTOTPAuthenticator(object):
         print_qrcode(otp.provisioning_uri("jumpi/"+user.fullname))
         req = self.validate(user)
         if req:
+            log.info("user=%d has activated 2fa 'totp'", user.id)
             user.update("twofactor", True)
 
         return req
