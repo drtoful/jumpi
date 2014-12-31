@@ -46,7 +46,7 @@ class Authenticator(object):
 
         print "Choose Authenticator type:"
         for i in xrange(0, len(self.authenticators)):
-            print "%d) %s" % (i, self.authenticators[i].info[1])
+            print "%d) %s" % (i+1, self.authenticators[i].info[1])
         print ""
         print "c) cancel"
         print ""
@@ -56,7 +56,7 @@ class Authenticator(object):
             return False
 
         try:
-            choice = int(choice)
+            choice = int(choice)-1
             if choice < 0 or choice >= len(self.authenticators):
                 raise Exception()
         except:
@@ -64,6 +64,13 @@ class Authenticator(object):
             return False
 
         auth = self.authenticators[choice]
-        return auth.setup(user)
+        try:
+            return auth.setup(user)
+        except ImportError:
+            print "Authenticator not available! Please ask administrator for" + \
+                "further information"
+            log.error("user=%d tried to setup authenticator '%s' which " + \
+                "resulted in import error; maybe missing dependencies?",
+                user.id, self.authenticators[choice].info[0]
 
 authenticator = Authenticator()
