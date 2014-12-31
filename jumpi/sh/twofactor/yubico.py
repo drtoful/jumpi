@@ -14,7 +14,7 @@ class YubicoAuthenticator(object):
         config = get_config()
         self.cas = None
         if not config.get("yubico", "ca_path", None) is None:
-            self.cas = config.get("yubico", "ca_path").split(",")
+            self.cas = config.get("yubico", "ca_path")
 
         self.urls = DEFAULT_API_URLS
         if not config.get("yubico", "api_url", None) is None:
