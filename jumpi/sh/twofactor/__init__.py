@@ -9,10 +9,12 @@ class Authenticator(object):
     def __init__(self):
         from jumpi.sh.twofactor.google import GoogleHOTPAuthenticator
         from jumpi.sh.twofactor.google import GoogleTOTPAuthenticator
+        from jumpi.sh.twofactor.yubico import YubicoAuthenticator
 
         self.authenticators = [
             GoogleHOTPAuthenticator(),
-            GoogleTOTPAuthenticator()
+            GoogleTOTPAuthenticator(),
+            YubicoAuthenticator()
         ]
 
     def validate(self, user):
