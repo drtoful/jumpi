@@ -10,7 +10,10 @@ extras = {
     'with_otp_google': [
         'pyotp >= 1.3.0',
         'qrcode >= 5.1'
-    ]
+    ],
+    'with_otp_yubico': [
+        'yubico-client >= 1.9.1'
+    ],
 }
 
 setup(
@@ -28,7 +31,7 @@ setup(
     install_requires=[
         'flask >= 0.9',
         'sqlalchemy >= 0.9',
-        'requests >= 2.2.1',
+        'requests >= 2.2.1,<2.3',
         'paramiko >= 1.14',
         'pyvault >= 0.2.1',
         'pyte >= 0.4.8',
