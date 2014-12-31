@@ -51,3 +51,24 @@ port = <integer>
 #
 # Default: 100
 iterations = <integer>
+
+
+#
+# Configuration for Yubico YubiKey OTP
+# http://www.yubico.com
+#
+[yubico]
+# Comma separated list of API endpoints for validating Yubico
+# OTP tokens. Useful if you have setup your own validation server
+# in your enterprise.
+#
+# Example: https://api.yubico.com/wsapi/2.0/verify
+# Default: Yubico Cloud Validation Service URLs
+api_url = <url>[,<url>,...]
+
+# Absolute path to a path holding valid CA bundles. Useful if you
+# have your own validation server in your enterprise with a
+# certificate not signed by any of the well-known CAs.
+#
+# Default: Standard Locations of most Operating Systems
+ca_path = <path>
