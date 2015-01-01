@@ -71,6 +71,6 @@ class Authenticator(object):
                 "further information"
             log.error("user=%d tried to setup authenticator '%s' which " + \
                 "resulted in import error; maybe missing dependencies?",
-                user.id, self.authenticators[choice].info[0]
+                user.id, self.authenticators[choice].info[0])
 
 authenticator = Authenticator()
