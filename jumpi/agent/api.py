@@ -301,7 +301,7 @@ def file_put():
 @json_required()
 @json_validate(required=["user_id", "session_id", "duration", "width", "height",
     "time"], user_id="integer", session_id="string", duration="integer",
-    width="integer", height="integer", time="date")
+    width="integer", height="integer", time="date", watchable="boolean")
 def user_recording():
     session_id = get_session_id()
     data = request.json
@@ -312,6 +312,7 @@ def user_recording():
         duration = data['duration'],
         width = data['width'],
         height = data['height'],
+        watchable = data['watchable'],
         time = datetime.datetime.strptime(data['time'], "%Y-%m-%d %H:%M:%S")
     )
 

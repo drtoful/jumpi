@@ -64,7 +64,8 @@ You're logged in as: %s
             duration = int(recorder.recording.duration),
             width = int(recorder.recording.columns),
             height = int(recorder.recording.lines),
-            time = format_datetime(start)
+            time = format_datetime(start),
+            watchable = recorder.recording.watchable
         )
         id = str(user.id)+"@"+shell.session
         vault.store(id, str(recorder.recording))

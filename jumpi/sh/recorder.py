@@ -9,7 +9,6 @@
 #   https://github.com/asciinema/asciinema-cli/blob/524f1dde9709a4c15b90721c9e94a8716fcdfb09/asciinema/pty_recorder.py
 #
 
-import pyte
 import json
 import pty
 import sys
@@ -45,29 +44,40 @@ def _force_unicode(txt):
 class Recorder(object):
     class Recording(object):
         def __init__(self, lines, columns):
-            self.screen = pyte.DiffScreen(columns, lines)
-            self.stream = pyte.Stream()
+            try:
+                import pyte
+                self.screen = pyte.DiffScreen(columns, lines)
+                self.stream = pyte.Stream()
+                self.stream.attach(self.screen)
+            except ImportError:
+                self.screen = self.stream = None
+
+            self.watchable = not (self.screen is None or self.stream is None)
             self.lines = lines
             self.columns = columns
             self.recordings = []
             self.duration = 0
 
-            self.stream.attach(self.screen)
-
         def update(self, capture):
             secs, microsecs, data = capture
 
-            self.screen.dirty.clear()
-            self.stream.feed(_force_unicode(data))
-            display = self.screen.display
+            if self.watchable:
+                self.screen.dirty.clear()
+                self.stream.feed(_force_unicode(data))
+                display = self.screen.display
 
             self.duration += secs
             self.duration += microsecs/1000000.0
 
+            changes = proc_data = None
+            if self.watchable:
+                changes = list(self.screen.dirty)
+                proc_data  = [display[x].rstrip() for x in self.screen.dirty]
+
             self.recordings.append({
                 'delay': secs*1000000+microsecs,
-                'changes': list(self.screen.dirty),
-                'data': [display[x].rstrip() for x in self.screen.dirty],
+                'changes': changes,
+                'data': proc_data,
                 'raw': base64.b64encode(data)
             })
 
@@ -140,6 +150,9 @@ class Recorder(object):
             if pty.STDIN_FILENO in rfds:
                 data = os.read(pty.STDIN_FILENO, 1024)
                 self._handle_stdin_read(data)
+
+    def __init__(self):
+        self.recording = Recorder.Recording(80, 24)
 
     def record(self, func, *args, **kwargs):
         pid, self.master_fd = pty.fork()

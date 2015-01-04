@@ -42,7 +42,9 @@
             <em>(Session: {{ rec.session_id }})</em>
 
             <div class="btn btn-group pull-right" style="padding: 0;">
+                {% if rec.watchable %}
                 <button type="button" player-width="{{ rec.width }}" player-height="{{ rec.height }}" player-duration="{{ rec.duration }}" player-session="{{ rec.session_id }}" class="btn btn-xs btn-primary play" data-toggle="modal" data-target=".bs-terminal-modal"><span class="fa fa-video-camera"></span></button>
+                {% endif %}
                 <a href="{{ url_for('user.recordings_ttyrec', id=user.id) }}?session={{ rec.session_id }}" type="button" class="btn btn-xs btn-primary"><span class="fa fa-download"></span></a>
             </div>
         </div>

@@ -72,6 +72,7 @@ class Recording(_Base):
     height = Column(Integer, nullable=False, default=24)
     duration = Column(Integer, nullable=False, default=0)
     time = Column(DateTime(timezone="UTC"), nullable=False)
+    watchable = Column(Boolean, nullable=True, default=False)
 
     user = relationship("User", backref=backref('user_recordings', order_by=id,
         lazy='subquery'))

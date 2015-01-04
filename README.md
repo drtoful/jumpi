@@ -20,7 +20,6 @@ above command
 * [requests](http://docs.python-requests.org/en/latest/) >= 2.2.1
 * [paramiko](http://www.paramiko.org/) >= 1.14
 * [pyvault](https://github.com/drtoful/pyvault) >= 0.2.1
-* [pyte](http://pyte.readthedocs.org/en/latest/) >= 0.4.8
 * [alembic](http://alembic.readthedocs.org/en/latest/) >= 0.6.7
 
 To successfully build and install the dependencies you might install

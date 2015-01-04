@@ -14,6 +14,9 @@ extras = {
     'with_otp_yubico': [
         'yubico-client >= 1.9.1'
     ],
+    'with_pyte': [
+        'pyte >= 0.4.8',
+    ]
 }
 
 setup(
@@ -34,7 +37,6 @@ setup(
         'requests >= 2.2.1,<2.3',
         'paramiko >= 1.14',
         'pyvault >= 0.2.1',
-        'pyte >= 0.4.8',
         'alembic >= 0.6.7',
     ],
     extras_require=extras,
