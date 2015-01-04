@@ -535,25 +535,29 @@ Stores information about a new recording the DB.
 
 **Parameters**
 
-+---------------------+----------------------------------------+
-| | user_id           |The User involved in this session       |
-| | *integer,required*|                                        |
-+---------------------+----------------------------------------+
-| | session_id        |Unique session ID                       |
-| | *string,required* |                                        |
-+---------------------+----------------------------------------+
-| | duration          |Duration of the session in seconds      |
-| | *integer,required*|                                        |
-+---------------------+----------------------------------------+
-| | width             |Width of the Client SSH window/terminal |
-| | *integer,required*|                                        |
-+---------------------+----------------------------------------+
-| | height            |Height of the Client SSH window/terminal|
-| | *integer,required*|                                        |
-+---------------------+----------------------------------------+
-| | time              |Date and Time when the session started  |
-| | *date,required*   |                                        |
-+---------------------+----------------------------------------+
++-----------------------+----------------------------------------+
+| | user_id             |The User involved in this session       |
+| | *integer,required*  |                                        |
++-----------------------+----------------------------------------+
+| | session_id          |Unique session ID                       |
+| | *string,required*   |                                        |
++-----------------------+----------------------------------------+
+| | duration            |Duration of the session in seconds      |
+| | *integer,required*  |                                        |
++-----------------------+----------------------------------------+
+| | width               |Width of the Client SSH window/terminal |
+| | *integer,required*  |                                        |
++-----------------------+----------------------------------------+
+| | height              |Height of the Client SSH window/terminal|
+| | *integer,required*  |                                        |
++-----------------------+----------------------------------------+
+| | time                |Date and Time when the session started  |
+| | *date,required*     |                                        |
++-----------------------+----------------------------------------+
+| | watchable           |Specifies wether session data contains  |
+| | *boolean, required* |processed information to be viewable    |
+|                       |with Javascript in WebUI                |
++-----------------------+----------------------------------------+
 
 **Response**
 

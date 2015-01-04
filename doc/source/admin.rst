@@ -44,6 +44,83 @@ of the certificate.
 Enable then the configuration by linking (*ln*) the config in sites-enabled and
 then restart nginx.
 
+TwoFactor Authentication
+------------------------
+
+You can setup JumPi to allow users to enable two factor authentication. The user can
+select between multiple methods:
+
+* TOTP/HOTP according to RFC 6238 (GoogleAuthenticator compatible)
+* Yubico `YubiKey`_ OTP
+
+.. _YubiKey: https://www.yubico.com/products/yubikey-hardware/
+
+**TOTP/HOTP according to RFC 6238**
+
+In order to enable this authentication method you need to fullfill at least the
+following dependencies:
+
+* `pyotp`_ >= 1.3.0
+* `qrcode`_ >= 5.1
+
+You can also resolve these dependencies with the following command within the source
+directory:
+
+::
+
+    easy_install . jumpi[with_otp_google]
+
+
+.. _pyotp: https://github.com/nathforge/pyotp
+.. _qrcode: https://github.com/lincolnloop/python-qrcode
+
+**Yubico YubiKey OTP**
+
+In order to enable this authentication method you need to fullfill at least the
+following dependencies:
+
+* `yubico_client`_ >= 1.9.1
+
+You can also resolve these dependencies with the following command within the source
+directory:
+
+::
+
+    easy_install . jumpi[with_otp_yubico]
+
+If you do not have your own validation server running and plan to use the public
+cloud servers, you have to register yourself on the following page: https://upgrade.yubico.com/getapikey/.
+
+After that you need to configure the client id and the secret key in the config file:
+
+::
+
+    [yubico]
+    api_clientid = xxxx
+    api_secret = yyyy
+
+.. _yubico_client: https://github.com/Kami/python-yubico-client
+
+Session Recording
+-----------------
+
+You can configure JumPi to process session recordings, so that you can watch them using a Javascript
+in your browser. In order to enable this feature, you need to install at least these
+dependencies:
+
+* `pyte`_ >= 0.4.8
+
+You can also resolve these dependencies with the following command within the source
+directory:
+
+::
+
+    easy_install . jumpi[with_pyte]
+ 
+Note, that enabling this will probably slow down your connection and use a bit of resources.
+
+.. _pyte: http://pyte.readthedocs.org/en/latest/
+
 Virtual Environment
 -------------------
 
