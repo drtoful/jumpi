@@ -3,6 +3,9 @@
 import json
 import datetime
 import calendar
+import qrcode
+import getpass
+import pyotp
 
 from jumpi.sh.agent import Vault
 from jumpi.sh import log
@@ -14,7 +17,6 @@ def print_qrcode(value):
 
         adapted from nodejs (https://github.com/gtanner/qrcode-terminal)
     """
-    import qrcode
     qr = qrcode.QRCode(border=1)
     qr.add_data(value)
     qr.make()
@@ -36,9 +38,6 @@ def round_time(dt=None, round=30, round_up=True):
 
 class GoogleHOTPAuthenticator(object):
     def validate(self, user):
-        import getpass
-        import pyotp
-
         vault = Vault()
         req = vault.retrieve(str(user.id)+"@otp")
         if req is None:
@@ -67,7 +66,6 @@ class GoogleHOTPAuthenticator(object):
         return result
 
     def setup(self, user):
-        import pyotp
         secret = pyotp.random_base32()
         otp = pyotp.TOTP(secret)
 
@@ -94,9 +92,6 @@ class GoogleHOTPAuthenticator(object):
 
 class GoogleTOTPAuthenticator(object):
     def validate(self, user):
-        import getpass
-        import pyotp
-
         def _now_timestamp():
             return calendar.timegm(round_time().timetuple())
 
@@ -127,8 +122,6 @@ class GoogleTOTPAuthenticator(object):
         return result
 
     def setup(self, user):
-        import pyotp
-
         secret = pyotp.random_base32()
         otp = pyotp.TOTP(secret)
 

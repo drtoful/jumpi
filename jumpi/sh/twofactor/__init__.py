@@ -7,15 +7,28 @@ from jumpi.sh import log
 
 class Authenticator(object):
     def __init__(self):
-        from jumpi.sh.twofactor.google import GoogleHOTPAuthenticator
-        from jumpi.sh.twofactor.google import GoogleTOTPAuthenticator
-        from jumpi.sh.twofactor.yubico import YubicoAuthenticator
+        self.authenticators = []
 
-        self.authenticators = [
-            GoogleHOTPAuthenticator(),
-            GoogleTOTPAuthenticator(),
-            YubicoAuthenticator()
-        ]
+        try:
+            from jumpi.sh.twofactor.google import GoogleHOTPAuthenticator
+            from jumpi.sh.twofactor.google import GoogleTOTPAuthenticator
+
+            self.authenticators += [
+                GoogleHOTPAuthenticator(),
+                GoogleTOTPAuthenticator(),
+            ]
+        except ImportError:
+            pass
+
+        try:
+            from jumpi.sh.twofactor.yubico import YubicoAuthenticator
+
+            self.authenticators += [
+                YubicoAuthenticator()
+            ]
+        except ImportError:
+            pass
+
 
     def validate(self, user):
         if not user.need_otp():

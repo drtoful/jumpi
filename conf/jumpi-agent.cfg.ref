@@ -66,6 +66,19 @@ iterations = <integer>
 # Default: Yubico Cloud Validation Service URLs
 api_url = <url>[,<url>,...]
 
+# ClientID and secret key as given by the registration site for the use
+# of the public cloud API servers. The default of empty clientid and
+# no secret will not work and will always yield in faulting
+# validation of your OTP.
+#
+# Note that you might not need this if you have your own validation
+# server.
+#
+# You can register under the following URL:
+#     https://upgrade.yubico.com/getapikey/
+api_clientid = <string>
+api_secret = <string>
+
 # Absolute path to a path holding valid CA bundles. Useful if you
 # have your own validation server in your enterprise with a
 # certificate not signed by any of the well-known CAs.

@@ -6,36 +6,44 @@ import json
 from jumpi.config import get_config
 from jumpi.sh import log
 from jumpi.sh.agent import Vault
+from yubico_client.yubico import Yubico, DEFAULT_API_URLS
+from yubico_client.yubico_exceptions import YubicoError
 
 class YubicoAuthenticator(object):
     def __init__(self):
-        from yubico_client.yubico import DEFAULT_API_URLS
-
         config = get_config()
-        self.cas = None
-        if not config.get("yubico", "ca_path", None) is None:
-            self.cas = config.get("yubico", "ca_path")
 
-        self.urls = DEFAULT_API_URLS
+        cas = None
+        if not config.get("yubico", "ca_path", None) is None:
+            cas = config.get("yubico", "ca_path")
+
+        api_urls = DEFAULT_API_URLS
         if not config.get("yubico", "api_url", None) is None:
-            self.urls = config.get("yubico", "api_url").split(",")
+            api_urls = config.get("yubico", "api_url").split(",")
+
+        api_clientid = ""
+        if not config.get("yubico", "api_clientid", None) is None:
+            api_clientid = config.get("yubico", "api_clientid")
+
+        api_secret = None
+        if not config.get("yubico", "api_secret", None) is None:
+            api_secret = config.get("yubico", "api_secret")
+
+        self.yubico = Yubico(api_clientid, key=api_secret, api_urls=api_urls,
+            ca_certs_bundle_path=cas)
 
     def validate(self, user):
-        from yubico_client.yubico import Yubico
-        from yubico_client.yubico_exceptions import YubicoError
-
         vault = Vault()
         req = vault.retrieve(str(user.id)+"@otp")
         if req is None:
             return False
 
         data = json.loads(req)
-        otp = Yubico(data['device_id'], key=data['key'], api_urls=self.urls,
-            ca_certs_bundle_path=self.cas)
-
         token = getpass.getpass("Token:")
         try:
-            return otp.verify(token)
+            if not token[:12] == data['device_id']:
+                return False
+            return self.yubico.verify(token)
         except Exception as exc:
             log.error("yubico otp verification failed for user=%d: %s",
                 user.id, exc.message)
@@ -47,25 +55,15 @@ class YubicoAuthenticator(object):
 
 
     def setup(self, user):
-        from yubico_client.otp import OTP
-
-        # ask for API key, or none
-        key = getpass.getpass("API Key (or press enter for none):")
-        if key == "":
-            key = None
-
         # ask for token
         token = getpass.getpass("Token: ")
-        otp = OTP(token, True)
-
         print "Setting up TwoFactor authentication " \
-            "for YubiKey-ID '%s'" % otp.device_id
+            "for YubiKey-ID '%s'" % token[:12]
 
         vault = Vault()
         req = vault.store(str(user.id)+"@otp", json.dumps({
             'type': "yubico",
-            'device_id': otp.device_id,
-            'key': key
+            'device_id': token[:12]
         }))
         if not req:
             return False
@@ -73,7 +71,7 @@ class YubicoAuthenticator(object):
         req = self.validate(user)
         if req:
             log.info("user=%d has activated 2fa 'yubico', device_id=%s",
-                user.id, otp.device_id)
+                user.id, token[:12])
             user.update("twofactor", True)
 
         return req
