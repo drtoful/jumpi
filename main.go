@@ -4,11 +4,13 @@ import (
 	"flag"
 	"log"
 
+	"github.com/drtoful/jumpi/jumpi"
 	"github.com/drtoful/jumpi/utils/mlock"
 )
 
 var (
 	mlockOpt = flag.Bool("mlock", false, "enable MLock")
+	dbOpt    = flag.String("db", "jumpi.db", "path to jumpi database file")
 )
 
 func main() {
@@ -25,4 +27,11 @@ func main() {
 			log.Println("MLock is unavailable to this Operating system, will continue without")
 		}
 	}
+
+	// create a new database
+	store, err := jumpi.NewStore(*dbOpt)
+	if err != nil {
+		log.Fatalf("db init error: %s\n", err.Error())
+	}
+	defer store.Close()
 }
