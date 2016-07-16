@@ -2,10 +2,15 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/drtoful/jumpi/jumpi"
 	"github.com/drtoful/jumpi/utils/mlock"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 var (
@@ -34,4 +39,29 @@ func main() {
 		log.Fatalf("db init error: %s\n", err.Error())
 	}
 	defer store.Close()
+
+	// unlock store, prompt for password
+	fmt.Printf("unlock password: ")
+	pwd, err := terminal.ReadPassword(int(syscall.Stdin))
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := store.Unlock(string(pwd)); err != nil {
+		log.Fatalf("unable to unlock store: %s\n", err.Error())
+	}
+
+	// start all services
+	jumpi.StartAPIServer("/", store)
+
+	// all listeners are started in the background as
+	// gofunc's so we wait here for an interupt signal
+	// to stop the service gracefully
+	sig := make(chan os.Signal)
+	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
+	for {
+		select {
+		case s := <-sig:
+			log.Fatalf("main: Signal (%d) received, stopping\n", s)
+		}
+	}
 }

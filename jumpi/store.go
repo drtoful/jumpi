@@ -39,6 +39,7 @@ var (
 	BucketSecrets     = []string{"secrets"}
 	BucketSecretsKeys = []string{"secrets", "keys"}
 	BucketTargets     = []string{"targets"}
+	BucketSessions    = []string{"sessions"}
 
 	ErrNoBucketGiven = errors.New("no bucket specified")
 	ErrLocked        = errors.New("store is locked")
@@ -88,6 +89,9 @@ func NewStore(filename string) (*Store, error) {
 		return nil, err
 	}
 	if err := store.Create(BucketTargets); err != nil {
+		return nil, err
+	}
+	if err := store.Create(BucketSessions); err != nil {
 		return nil, err
 	}
 
