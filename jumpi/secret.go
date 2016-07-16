@@ -197,3 +197,10 @@ func (secret *Secret) Store(store *Store) error {
 
 	return nil
 }
+
+func (secret *Secret) Delete(store *Store) error {
+	if err := store.Delete(BucketSecretsKeys, secret.ID); err != nil {
+		return err
+	}
+	return store.Delete(BucketSecrets, secret.ID)
+}

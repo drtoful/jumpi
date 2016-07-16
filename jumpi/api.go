@@ -398,6 +398,54 @@ func storeStatus(w http.ResponseWriter, r *http.Request) {
 	Status.Write(w)
 }
 
+func secretSet(w http.ResponseWriter, r *http.Request) {
+	type _json struct {
+		ID   string `json:"id" format:"[^\/]{3,}"`
+		Type int    `json:"type"`
+		Data string `json:"data"`
+	}
+	var req _json
+
+	if err := CheckRequestObject(r, &req); err != nil {
+		BadRequest.Description = err.Error()
+		BadRequest.Write(w)
+		return
+	}
+
+	secret := &Secret{
+		ID:     req.ID,
+		Type:   TypeSecret(req.Type),
+		Secret: req.Data,
+	}
+	if err := secret.Store(globalStore); err != nil {
+		SecretStoreFailed := ErrorResponse{Status: http.StatusForbidden, Code: "err_secret_store_failed"}
+		SecretStoreFailed.Description = err.Error()
+		SecretStoreFailed.Write(w)
+		return
+	}
+
+	SecretStoreSuccessful := Response{Status: http.StatusOK}
+	SecretStoreSuccessful.Write(w)
+}
+
+func secretDelete(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	secret := &Secret{
+		ID: id,
+	}
+	if err := secret.Delete(globalStore); err != nil {
+		SecretDeleteFailed := ErrorResponse{Status: http.StatusForbidden, Code: "err_secret_delete_failed"}
+		SecretDeleteFailed.Description = err.Error()
+		SecretDeleteFailed.Write(w)
+		return
+	}
+
+	SecretDeleteSuccessful := Response{Status: http.StatusOK}
+	SecretDeleteSuccessful.Write(w)
+}
+
 func StartAPIServer(root string, store *Store) {
 	globalStore = store
 	go func() {
@@ -417,6 +465,9 @@ func StartAPIServer(root string, store *Store) {
 		api.Path("/store/unlock").Methods("POST").HandlerFunc(StackMiddleware(storeUnlock, LoginRequired))
 		api.Path("/store/lock").Methods("POST").HandlerFunc(StackMiddleware(storeLock, LoginRequired))
 		api.Path("/store/status").Methods("GET").HandlerFunc(StackMiddleware(storeStatus, LoginRequired))
+
+		api.Path("/secrets").Methods("POST").HandlerFunc(StackMiddleware(secretSet, LoginRequired))
+		api.Path("/secrets/{id}").Methods("DELETE").HandlerFunc(StackMiddleware(secretDelete, LoginRequired))
 
 		logger := &logger{log.New(os.Stdout, "", 0)}
 		n := negroni.New(negroni.NewRecovery(), logger)
