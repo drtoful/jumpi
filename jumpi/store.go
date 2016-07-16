@@ -177,6 +177,10 @@ func (store *Store) Password() ([]byte, error) {
 	return store.password, nil
 }
 
+func (store *Store) IsLocked() bool {
+	return store.locked
+}
+
 func (store *Store) Lock() error {
 	if _, err := rand.Read(store.password); err != nil {
 		return err

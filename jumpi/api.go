@@ -357,6 +357,47 @@ func authValidate(w http.ResponseWriter, r *http.Request) {
 	AuthTokenInvalid.Write(w)
 }
 
+func storeUnlock(w http.ResponseWriter, r *http.Request) {
+	type _json struct {
+		Password string `json:"password" format:".+"`
+	}
+	var pwd _json
+
+	if err := CheckRequestObject(r, &pwd); err != nil {
+		BadRequest.Description = err.Error()
+		BadRequest.Write(w)
+		return
+	}
+
+	if err := globalStore.Unlock(pwd.Password); err != nil {
+		UnlockFailed := ErrorResponse{Status: http.StatusForbidden, Code: "err_unlock_failed"}
+		UnlockFailed.Description = err.Error()
+		UnlockFailed.Write(w)
+		return
+	}
+
+	UnlockSuccessful := Response{Status: http.StatusOK}
+	UnlockSuccessful.Write(w)
+}
+
+func storeLock(w http.ResponseWriter, r *http.Request) {
+	if err := globalStore.Lock(); err != nil {
+		LockFailed := ErrorResponse{Status: http.StatusForbidden, Code: "err_lock_failed"}
+		LockFailed.Description = err.Error()
+		LockFailed.Write(w)
+		return
+	}
+
+	LockSuccessful := Response{Status: http.StatusOK}
+	LockSuccessful.Write(w)
+}
+
+func storeStatus(w http.ResponseWriter, r *http.Request) {
+	Status := Response{Status: http.StatusOK}
+	Status.Content = globalStore.IsLocked()
+	Status.Write(w)
+}
+
 func StartAPIServer(root string, store *Store) {
 	globalStore = store
 	go func() {
@@ -372,6 +413,10 @@ func StartAPIServer(root string, store *Store) {
 		api.Path("/auth/login").Methods("POST").HandlerFunc(authLogin)
 		api.Path("/auth/logout").Methods("GET").HandlerFunc(StackMiddleware(authLogout, LoginRequired))
 		api.Path("/auth/validate").Methods("GET").HandlerFunc(authValidate)
+
+		api.Path("/store/unlock").Methods("POST").HandlerFunc(StackMiddleware(storeUnlock, LoginRequired))
+		api.Path("/store/lock").Methods("POST").HandlerFunc(StackMiddleware(storeLock, LoginRequired))
+		api.Path("/store/status").Methods("GET").HandlerFunc(StackMiddleware(storeStatus, LoginRequired))
 
 		logger := &logger{log.New(os.Stdout, "", 0)}
 		n := negroni.New(negroni.NewRecovery(), logger)
