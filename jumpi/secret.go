@@ -36,6 +36,75 @@ type Secret struct {
 }
 
 func (secret *Secret) Load(store *Store) error {
+	// load up encryption key
+	data, err := store.Get(BucketSecretsKeys, secret.ID)
+	if err != nil {
+		return err
+	}
+
+	e := &entry{}
+	if err := json.Unmarshal([]byte(data), e); err != nil {
+		return err
+	}
+
+	nonce, err := utils.UnHexlify(e.Nonce)
+	if err != nil {
+		return err
+	}
+
+	key, err := utils.UnHexlify(e.Data)
+	if err != nil {
+		return err
+	}
+
+	skey, err := store.Password()
+	if err != nil {
+		return err
+	}
+
+	stream, err := chacha20.NewWithRounds(skey, nonce, uint8(e.Rounds))
+	if err != nil {
+		return err
+	}
+	stream.XORKeyStream(key, key)
+
+	// decrypt actual secret
+	data, err = store.Get(BucketSecrets, secret.ID)
+	if err != nil {
+		return err
+	}
+
+	if err := json.Unmarshal([]byte(data), e); err != nil {
+		return err
+	}
+
+	nonce, err = utils.UnHexlify(e.Nonce)
+	if err != nil {
+		return err
+	}
+
+	s, err := utils.UnHexlify(e.Data)
+	if err != nil {
+		return err
+	}
+
+	stream, err = chacha20.NewWithRounds(key, nonce, uint8(e.Rounds))
+	if err != nil {
+		return err
+	}
+	stream.XORKeyStream(s, s)
+
+	// clear encryption key
+	rand.Read(key)
+
+	// try to convert recovered data, to the type
+	// of the secret
+	secret.Type = TypeSecret(e.Type)
+	switch secret.Type {
+	case Password:
+		secret.Secret = string(s)
+	}
+
 	return nil
 }
 
