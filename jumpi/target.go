@@ -60,7 +60,7 @@ func (target *Target) authPassword() (string, error) {
 	return password, nil
 }
 
-func (target *Target) Connect(store *Store, newChannel ssh.NewChannel) error {
+func (target *Target) Connect(newChannel ssh.NewChannel) error {
 	clientConfig := &ssh.ClientConfig{
 		User: target.Username,
 		Auth: []ssh.AuthMethod{
