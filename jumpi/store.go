@@ -131,7 +131,7 @@ func (store *Store) Get(bucket []string, key string) (string, error) {
 }
 
 func (store *Store) Delete(bucket []string, key string) error {
-	err := store.db.View(func(tx *bolt.Tx) error {
+	err := store.db.Update(func(tx *bolt.Tx) error {
 		b, err := traverseBuckets(bucket, tx)
 		if err != nil {
 			return nil
