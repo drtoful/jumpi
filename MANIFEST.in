@@ -1,4 +1,0 @@
-include README.md LICENSE AUTHORS alembic.ini
-recursive-include jumpi/web/templates *.xhtml
-recursive-include jumpi/web/static *.css *.js
-recursive-include alembic *.py README *.mako
