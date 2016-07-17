@@ -2,6 +2,8 @@ package jumpi
 
 import (
 	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
 	"encoding/json"
 	"errors"
 
@@ -13,7 +15,7 @@ type TypeSecret int
 
 const (
 	Password TypeSecret = 0
-	PKey
+	PKey     TypeSecret = 1
 )
 
 var (
@@ -103,6 +105,14 @@ func (secret *Secret) Load(store *Store) error {
 	switch secret.Type {
 	case Password:
 		secret.Secret = string(s)
+	case PKey:
+		pkey, err := x509.ParsePKCS1PrivateKey(s)
+		if err != nil {
+			return err
+		}
+		secret.Secret = pkey
+	default:
+		return ErrUnknownSecretType
 	}
 
 	return nil
@@ -130,6 +140,8 @@ func (secret *Secret) Store(store *Store) error {
 	switch s := secret.Secret.(type) {
 	case string:
 		data = []byte(s)
+	case *rsa.PrivateKey:
+		data = x509.MarshalPKCS1PrivateKey(s)
 	default:
 		return ErrUnknownSecretType
 	}
