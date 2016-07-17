@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"sync"
 
 	"golang.org/x/crypto/ssh"
@@ -48,7 +49,7 @@ func (target *Target) authPassword() (string, error) {
 
 	if target.Secret.Secret == nil {
 		if err := target.Secret.Load(target.store); err != nil {
-			return "", ErrNoSecret
+			return "", err
 		}
 	}
 
@@ -60,7 +61,53 @@ func (target *Target) authPassword() (string, error) {
 	return password, nil
 }
 
-func (target *Target) Connect(newChannel ssh.NewChannel) error {
+func proxy(reqs1, reqs2 <-chan *ssh.Request, channel1, channel2 ssh.Channel) {
+	var closer sync.Once
+	closerChan := make(chan bool, 1)
+
+	closeFunc := func() {
+		channel1.Close()
+		channel2.Close()
+	}
+	defer closer.Do(closeFunc)
+
+	go func() {
+		io.Copy(channel1, channel2)
+		closerChan <- true
+	}()
+
+	go func() {
+		io.Copy(channel2, channel1)
+		closerChan <- true
+	}()
+
+	for {
+		select {
+		case req := <-reqs1:
+			if req == nil {
+				return
+			}
+			b, err := channel2.SendRequest(req.Type, req.WantReply, req.Payload)
+			if err != nil {
+				return
+			}
+			req.Reply(b, nil)
+		case req := <-reqs2:
+			if req == nil {
+				return
+			}
+			b, err := channel1.SendRequest(req.Type, req.WantReply, req.Payload)
+			if err != nil {
+				return
+			}
+			req.Reply(b, nil)
+		case <-closerChan:
+			return
+		}
+	}
+}
+
+func (target *Target) Connect(newChannel ssh.NewChannel, chans <-chan ssh.NewChannel) error {
 	clientConfig := &ssh.ClientConfig{
 		User: target.Username,
 		Auth: []ssh.AuthMethod{
@@ -75,34 +122,78 @@ func (target *Target) Connect(newChannel ssh.NewChannel) error {
 		return err
 	}
 
-	channel, reqs, err := newChannel.Accept()
-	if err != nil {
-		return err
-	}
-	go ssh.DiscardRequests(reqs)
-
-	channel2, _, err := client.OpenChannel("session", []byte{})
+	sessChannel, sessReqs, err := newChannel.Accept()
 	if err != nil {
 		return err
 	}
 
-	var closer sync.Once
-	closeFunc := func() {
-		channel.Close()
-		channel2.Close()
-		client.Close()
+	go func() {
+		for newChannel = range chans {
+			if newChannel == nil {
+				return
+			}
+
+			channel2, reqs2, err := client.OpenChannel(newChannel.ChannelType(), newChannel.ExtraData())
+			if err != nil {
+				x, ok := err.(*ssh.OpenChannelError)
+				if ok {
+					newChannel.Reject(x.Reason, x.Message)
+				} else {
+					newChannel.Reject(ssh.Prohibited, "remote server denied channel request")
+				}
+				continue
+			}
+
+			channel, reqs, err := newChannel.Accept()
+			if err != nil {
+				channel2.Close()
+				continue
+			}
+			go proxy(reqs, reqs2, channel, channel2)
+		}
+	}()
+
+	defer sessChannel.Close()
+	defer client.Close()
+
+	if newChannel.ChannelType() == "direct-tcpip" {
+		go ssh.DiscardRequests(sessReqs)
+
+		// connect to ourselves, and use interactive session
+		conn, err := net.Dial("tcp", ":2022")
+		if err != nil {
+			return err
+		}
+
+		var closer sync.Once
+		closerChan := make(chan bool, 1)
+
+		closeFunc := func() {
+			conn.Close()
+		}
+		defer closer.Do(closeFunc)
+
+		go func() {
+			io.Copy(sessChannel, conn)
+			closerChan <- true
+		}()
+
+		go func() {
+			io.Copy(conn, sessChannel)
+			closerChan <- true
+		}()
+
+		for {
+			<-closerChan
+			return nil
+		}
+	} else {
+		channel2, reqs2, err := client.OpenChannel("session", []byte{})
+		if err != nil {
+			return err
+		}
+
+		proxy(sessReqs, reqs2, sessChannel, channel2)
 	}
-
-	// copy stdin/stdout in cross pattern
-	go func() {
-		io.Copy(channel, channel2)
-		closer.Do(closeFunc)
-	}()
-
-	go func() {
-		io.Copy(channel2, channel)
-		closer.Do(closeFunc)
-	}()
-
 	return nil
 }
