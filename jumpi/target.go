@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net"
 	"sync"
 
 	"golang.org/x/crypto/ssh"
@@ -32,6 +31,24 @@ func (target *Target) Store(store *Store) error {
 		return ErrNoSecret
 	}
 	return store.Set(BucketTargets, target.ID(), target.Secret.ID)
+}
+
+func (target *Target) LoadSecret(store *Store) error {
+	if target.Secret != nil {
+		return nil
+	}
+
+	secret, err := store.Get(BucketTargets, target.ID())
+	if err != nil {
+		return err
+	}
+
+	target.Secret = &Secret{ID: secret}
+	if err := target.Secret.Load(store); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (target *Target) authPK() ([]ssh.Signer, error) {
@@ -121,14 +138,16 @@ func (target *Target) Connect(newChannel ssh.NewChannel, chans <-chan ssh.NewCha
 	if err != nil {
 		return err
 	}
+	defer client.Close()
 
 	sessChannel, sessReqs, err := newChannel.Accept()
 	if err != nil {
 		return err
 	}
+	defer sessChannel.Close()
 
 	go func() {
-		for newChannel = range chans {
+		for newChannel := range chans {
 			if newChannel == nil {
 				return
 			}
@@ -153,47 +172,11 @@ func (target *Target) Connect(newChannel ssh.NewChannel, chans <-chan ssh.NewCha
 		}
 	}()
 
-	defer sessChannel.Close()
-	defer client.Close()
-
-	if newChannel.ChannelType() == "direct-tcpip" {
-		go ssh.DiscardRequests(sessReqs)
-
-		// connect to ourselves, and use interactive session
-		conn, err := net.Dial("tcp", ":2022")
-		if err != nil {
-			return err
-		}
-
-		var closer sync.Once
-		closerChan := make(chan bool, 1)
-
-		closeFunc := func() {
-			conn.Close()
-		}
-		defer closer.Do(closeFunc)
-
-		go func() {
-			io.Copy(sessChannel, conn)
-			closerChan <- true
-		}()
-
-		go func() {
-			io.Copy(conn, sessChannel)
-			closerChan <- true
-		}()
-
-		for {
-			<-closerChan
-			return nil
-		}
-	} else {
-		channel2, reqs2, err := client.OpenChannel("session", []byte{})
-		if err != nil {
-			return err
-		}
-
-		proxy(sessReqs, reqs2, sessChannel, channel2)
+	channel2, reqs2, err := client.OpenChannel("session", []byte{})
+	if err != nil {
+		return err
 	}
+
+	proxy(sessReqs, reqs2, sessChannel, channel2)
 	return nil
 }
