@@ -12,8 +12,9 @@ import (
 )
 
 var (
-	mlockOpt = flag.Bool("mlock", false, "enable MLock")
-	dbOpt    = flag.String("db", "jumpi.db", "path to jumpi database file")
+	mlockOpt   = flag.Bool("mlock", false, "enable MLock")
+	dbOpt      = flag.String("db", "jumpi.db", "path to jumpi database file")
+	hostKeyOpt = flag.String("hostkey", "id_rsa", "path to host key to use for SSH server")
 )
 
 func main() {
@@ -40,6 +41,9 @@ func main() {
 
 	// start all services
 	jumpi.StartAPIServer("/", store)
+	if err := jumpi.StartSSHServer(store, *hostKeyOpt); err != nil {
+		log.Fatalf("unable to start SSH server: %s\n", err.Error())
+	}
 
 	// all listeners are started in the background as
 	// gofunc's so we wait here for an interupt signal
