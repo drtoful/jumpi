@@ -1,5 +1,7 @@
 package main
 
+//go:generate go-bindata -pkg "jumpi" -o jumpi/bindata.go static/...
+
 import (
 	"flag"
 	"log"
