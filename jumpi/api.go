@@ -390,6 +390,7 @@ func storeUnlock(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Printf("audit: %v unlocked store successfully\n", context.Get(r, "user"))
 	UnlockSuccessful := Response{Status: http.StatusOK}
 	UnlockSuccessful.Write(w)
 }
@@ -402,6 +403,7 @@ func storeLock(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Printf("audit: %v locked store successfully\n", context.Get(r, "user"))
 	LockSuccessful := Response{Status: http.StatusOK}
 	LockSuccessful.Write(w)
 }
@@ -438,6 +440,7 @@ func secretSet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Printf("audit: %v added secret '%s'\n", context.Get(r, "user"), req.ID)
 	SecretStoreSuccessful := Response{Status: http.StatusOK}
 	SecretStoreSuccessful.Write(w)
 }
@@ -456,6 +459,7 @@ func secretDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Printf("audit: %v removed secret '%s'\n", context.Get(r, "user"), id)
 	SecretDeleteSuccessful := Response{Status: http.StatusOK}
 	SecretDeleteSuccessful.Write(w)
 }
@@ -487,6 +491,7 @@ func userAdd(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Printf("audit: %v added user '%s' with fingerprint '%s'\n", context.Get(r, "user"), req.Name, user.KeyFingerprint)
 	UserCreateSuccessful := Response{Status: http.StatusOK}
 	UserCreateSuccessful.Write(w)
 }
