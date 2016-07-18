@@ -128,8 +128,12 @@ func (server *server) auth(conn ssh.ConnMetadata, key ssh.PublicKey) (*ssh.Permi
 	digest := sha256.New()
 	digest.Write(k)
 	id := utils.Hexlify(digest.Sum(nil))
+	user := &User{KeyFingerprint: id}
+	if err := user.Load(server.store); err != nil {
+		return nil, err
+	}
+	perm.Extensions["user"] = user.Name
 
-	//TODO: authenticate
 	return perm, nil
 }
 

@@ -446,6 +446,37 @@ func secretDelete(w http.ResponseWriter, r *http.Request) {
 	SecretDeleteSuccessful.Write(w)
 }
 
+func userAdd(w http.ResponseWriter, r *http.Request) {
+	type _json struct {
+		Name string `json:"name" format:"[a-zA-Z0-9\-\_]+"`
+		Pub  string `json:"pub" format:"ssh-rsa [A-Za-z0-9\+\/]+[\=]{0,2}.*"`
+	}
+	var req _json
+
+	if err := CheckRequestObject(r, &req); err != nil {
+		BadRequest.Description = err.Error()
+		BadRequest.Write(w)
+		return
+	}
+
+	user, err := UserFromPublicKey(req.Name, req.Pub)
+	if err != nil {
+		BadRequest.Description = err.Error()
+		BadRequest.Write(w)
+		return
+	}
+
+	if err := user.Store(globalStore); err != nil {
+		UserCreateFailed := ErrorResponse{Status: http.StatusForbidden, Code: "err_user_create_failed"}
+		UserCreateFailed.Description = err.Error()
+		UserCreateFailed.Write(w)
+		return
+	}
+
+	UserCreateSuccessful := Response{Status: http.StatusOK}
+	UserCreateSuccessful.Write(w)
+}
+
 func StartAPIServer(root string, store *Store) {
 	globalStore = store
 	go func() {
@@ -468,6 +499,8 @@ func StartAPIServer(root string, store *Store) {
 
 		api.Path("/secrets").Methods("POST").HandlerFunc(StackMiddleware(secretSet, LoginRequired))
 		api.Path("/secrets/{id}").Methods("DELETE").HandlerFunc(StackMiddleware(secretDelete, LoginRequired))
+
+		api.Path("/users").Methods("POST").HandlerFunc(StackMiddleware(userAdd, LoginRequired))
 
 		logger := &logger{log.New(os.Stdout, "", 0)}
 		n := negroni.New(negroni.NewRecovery(), logger)
