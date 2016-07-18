@@ -1,16 +1,21 @@
 package jumpi
 
 import (
+	"bytes"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"hash"
+	"log"
+	"os"
 
 	"github.com/boltdb/bolt"
 	"github.com/drtoful/jumpi/utils"
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/crypto/pbkdf2"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 type Store struct {
@@ -36,6 +41,7 @@ type metaKeyDerivation struct {
 
 var (
 	BucketMeta        = []string{"meta"}
+	BucketMetaAdmins  = []string{"meta", "admins"}
 	BucketSecrets     = []string{"secrets"}
 	BucketSecretsKeys = []string{"secrets", "keys"}
 	BucketTargets     = []string{"targets"}
@@ -81,6 +87,9 @@ func NewStore(filename string) (*Store, error) {
 
 	// create all needed buckets
 	if err := store.Create(BucketMeta); err != nil {
+		return nil, err
+	}
+	if err := store.Create(BucketMetaAdmins); err != nil {
 		return nil, err
 	}
 	if err := store.Create(BucketSecrets); err != nil {
@@ -252,4 +261,53 @@ func (store *Store) Unlock(password string) error {
 	store.locked = false
 
 	return nil
+}
+
+func readPwd(msg string) (string, error) {
+	fmt.Printf(msg)
+	pwd1, err := terminal.ReadPassword(int(os.Stdin.Fd()))
+	fmt.Println()
+	if err != nil {
+		return "", err
+	}
+
+	fmt.Printf("Repeat: ")
+	pwd2, err := terminal.ReadPassword(int(os.Stdin.Fd()))
+	fmt.Println()
+	if err != nil {
+		return "", err
+	}
+
+	if bytes.Compare(pwd1, pwd2) != 0 {
+		return "", errors.New("inavlid repeated password")
+	}
+
+	return string(pwd1), nil
+}
+
+func (store *Store) FTR() {
+	fmt.Println("Looks like this is the first time that you are running this database")
+
+	// store password
+	pwd, err := readPwd("Enter Unlock Password: ")
+	if err != nil {
+		log.Fatalf("ftr failed: %s\n", err.Error())
+	}
+
+	store.Unlock(pwd)
+	store.Lock()
+
+	// admin password (for ui/api)
+	pwd, err = readPwd("Enter Admin Password: ")
+	if err != nil {
+		log.Fatal("ftr failed: %s\n", err.Error())
+	}
+
+	challenge, err := bcrypt.GenerateFromPassword([]byte(pwd), 12)
+	if err != nil {
+		log.Fatal("ftr failed: %s\n", err.Error())
+	}
+	store.Set(BucketMetaAdmins, "admin", string(challenge))
+
+	fmt.Println("Setup complete")
 }

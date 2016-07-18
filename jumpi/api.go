@@ -18,6 +18,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var (
@@ -291,6 +292,20 @@ func LoginRequired(handler http.Handler) http.HandlerFunc {
 	}
 }
 
+func validate(username, password string) error {
+	hash, err := globalStore.Get(BucketMetaAdmins, username)
+	if err != nil {
+		return errors.New("invalid username/password")
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	if err != nil {
+		return errors.New("invalid username/password")
+	}
+
+	return nil
+}
+
 func authLogin(w http.ResponseWriter, r *http.Request) {
 	type _json struct {
 		Username string `json:"username" format:"[a-z][a-z0-9\_\-]{2,}"`
@@ -305,10 +320,9 @@ func authLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check username and password
-	//TODO
-	if false {
+	if err := validate(cred.Username, cred.Password); err != nil {
 		AuthLoginFailed := ErrorResponse{Status: http.StatusForbidden, Code: "err_login_failed"}
-		//AuthLoginFailed.Description = err.Error()
+		AuthLoginFailed.Description = err.Error()
 		AuthLoginFailed.Write(w)
 		return
 	}

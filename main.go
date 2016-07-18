@@ -32,12 +32,23 @@ func main() {
 		}
 	}
 
+	// check if database does already exist. if not, then this is a
+	// first time run
+	var ftr bool = false
+	if _, err := os.Stat(*dbOpt); os.IsNotExist(err) {
+		ftr = true
+	}
+
 	// create a new database
 	store, err := jumpi.NewStore(*dbOpt)
 	if err != nil {
 		log.Fatalf("db init error: %s\n", err.Error())
 	}
 	defer store.Close()
+
+	if ftr {
+		store.FTR()
+	}
 
 	// start all services
 	jumpi.StartAPIServer("/", store)
