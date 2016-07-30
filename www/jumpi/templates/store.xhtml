@@ -1,0 +1,29 @@
+{% extends "base.xhtml" %}
+
+{% block content %}
+
+{% if session.store_locked %}
+<h3><span class="fa fa-lock"></span> Unlock Store</h3>
+
+<form method="POST" action="{{ url_for('ui.store') }}" class="form-horizontal">
+    <input type="hidden" name="action" value="unlock" />
+    <div class="input-group">
+            <input class="form-control" placeholder="Password" type="password" name="password" />
+            <span class="input-group-btn">  
+                <button class="btn btn-primary"><span class="fa fa-unlock"></span></button>
+            </span>
+    </div>
+</form>
+{% else %}
+<h3><span class="fa fa-unlock"></span> Lock Store</h3>
+
+<form method="POST" action="{{ url_for('ui.store') }}" class="form-horizontal">
+	<input type="hidden" name="action" value="lock" />
+	<div class="alert alert-success" role="alert">
+		The store is successfully unlocked! Press the button to lock it again.
+		<button class="btn btn-primary"><span class="fa fa-lock"></span></button>
+	</div>
+</form>
+{% endif %}
+
+{% endblock %}

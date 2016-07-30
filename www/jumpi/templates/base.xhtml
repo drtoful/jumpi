@@ -21,7 +21,7 @@
             <div class="container">
                 <!-- Header -->
                 <div class="navbar-header">
-                    <a class="navbar-brand" href="#">jumpi</a>
+                    <a class="navbar-brand" href="{{ url_for('ui.index') }}">jumpi</a>
                 </div>
 
                 <!-- Links -->
@@ -30,6 +30,9 @@
                     <li><a href="#">Targets</a></li>
                     <li><a href="#">Roles</a></li>
                     <li><a href="#">Users</a></li>
+                    {% if session %}
+                    <li><a href="{{ url_for('ui.store') }}"><span class="fa {% if session.store_locked %}fa-lock text-danger{% else %}fa-unlock text-success{% endif %}"></span></a></li>
+                    {% endif %}
                 </ul>
 
                 <!-- User -->
@@ -50,7 +53,7 @@
             {% if session.store_locked %}
             <div class="alert alert-danger" role="alert">
                 <h4><span class="fa fa-warning"></span> Warning!</h4>
-                <p>The store is still locked. Some settings may not be saved and may cause errors. Unlock the store first, before continuing.</p>
+                <p>The store is still locked. Some settings may not be saved and may cause errors. <a href="{{ url_for('ui.store') }}">Unlock</a> the store first, before continuing.</p>
             </div>
             {% endif %}
 

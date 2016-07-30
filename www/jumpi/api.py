@@ -63,8 +63,19 @@ class APIAuth(object):
         return ok
 
 class APIStore(object):
-    def status(self):
-        ok, _ = api.get("/store/status")
+    def is_locked(self):
+        ok, val = api.get("/store/status")
+        if ok:
+            return val
+        return True
+
+    def unlock(self, password):
+        ok, _ = api.post("/store/unlock", dict( \
+            password = password))
+        return ok
+
+    def lock(self):
+        ok, _ = api.post("/store/lock", None)
         return ok
 
 class APISecrets(object):

@@ -28,7 +28,7 @@ def authenticated(f):
             return authenticate()
 
         api = APIStore()
-        session['store_locked'] = api.status()
+        session['store_locked'] = api.is_locked()
 
         return f(*args, **kwargs)
     return decorator

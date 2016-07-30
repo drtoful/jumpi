@@ -4,7 +4,7 @@ import functools
 
 from flask import Blueprint, redirect, url_for, request, session
 from jumpi.decorators import templated, authenticated
-from jumpi.api import APIAuth, APISecrets
+from jumpi.api import APIAuth, APISecrets, APIStore
 
 uibp = Blueprint("ui", __name__)
 get = functools.partial(uibp.route, methods=['GET'])
@@ -49,3 +49,21 @@ def logout():
 def secrets():
     api = APISecrets()
     return dict(secrets = api.list(0, 10))
+
+@get("/store")
+@post("/store")
+@authenticated
+@templated("store.xhtml")
+def store():
+    api = APIStore()
+    if request.method == "POST":
+        action = request.form.get("action", "")
+        if action == "unlock":
+            password = request.form.get("password", "")
+            api.unlock(password)
+        if action == "lock":
+            api.lock()
+
+        return redirect(url_for("ui.store"))
+
+    return dict()
