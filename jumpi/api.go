@@ -11,6 +11,7 @@ import (
 	"os"
 	"reflect"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -425,6 +426,33 @@ func storeStatus(w http.ResponseWriter, r *http.Request) {
 	Status.Write(w)
 }
 
+func secretList(w http.ResponseWriter, r *http.Request) {
+	skip := 0
+	limit := 0
+	if vals, ok := r.Form["skip"]; ok {
+		if i, err := strconv.ParseInt(vals[0], 10, 64); err != nil {
+			skip = int(i)
+		}
+	}
+	if vals, ok := r.Form["limit"]; ok {
+		if i, err := strconv.ParseInt(vals[0], 10, 64); err != nil {
+			limit = int(i)
+		}
+	}
+
+	keys, err := globalStore.Keys(BucketSecrets, "", skip, limit)
+	if err != nil {
+		SecretListFailed := ErrorResponse{Status: http.StatusForbidden, Code: "err_secret_list_failed"}
+		SecretListFailed.Description = err.Error()
+		SecretListFailed.Write(w)
+		return
+	}
+
+	SecretList := Response{Status: http.StatusOK}
+	SecretList.Content = keys
+	SecretList.Write(w)
+}
+
 func secretSet(w http.ResponseWriter, r *http.Request) {
 	type _json struct {
 		ID   string `json:"id" format:"[^\/]{3,}"`
@@ -527,6 +555,7 @@ func StartAPIServer(root string, store *Store) {
 		api.Path("/store/lock").Methods("POST").HandlerFunc(StackMiddleware(storeLock, LoginRequired))
 		api.Path("/store/status").Methods("GET").HandlerFunc(StackMiddleware(storeStatus, LoginRequired))
 
+		api.Path("/secrets").Methods("GET").HandlerFunc(StackMiddleware(secretList, LoginRequired))
 		api.Path("/secrets").Methods("POST").HandlerFunc(StackMiddleware(secretSet, StoreUnlockRequired, LoginRequired))
 		api.Path("/secrets/{id}").Methods("DELETE").HandlerFunc(StackMiddleware(secretDelete, LoginRequired))
 
