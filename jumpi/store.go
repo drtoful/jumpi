@@ -162,10 +162,14 @@ func (store *Store) Keys(bucket []string, q string, skip, limit int) ([]string, 
 			if n == skip+limit {
 				break
 			}
+			if len(k) == 0 {
+				break
+			}
 
 			// check if key is a bucket
 			nb := b.Bucket(k)
 			if nb != nil {
+				n -= 1
 				continue
 			}
 
