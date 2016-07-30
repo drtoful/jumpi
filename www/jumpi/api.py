@@ -25,10 +25,10 @@ class API(object):
             pass
         return False, None
 
-    def get(self, endpoint):
+    def get(self, endpoint, data = None):
         uri = "%s%s" % (self.base_uri, endpoint)
         bearer = session.get("bearer", "_no_auth_")
-        r = requests.get(uri, headers = {
+        r = requests.get(uri, params = data, headers = {
             'Authorization': "Bearer %s" % bearer})
         return self._parse_response(r)
 
@@ -66,3 +66,12 @@ class APIStore(object):
     def status(self):
         ok, _ = api.get("/store/status")
         return ok
+
+class APISecrets(object):
+    def list(self, skip, limit):
+        ok, keys = api.get("/secrets", dict( \
+            skip = skip, limit = limit))
+        if ok:
+            return keys
+        return None
+

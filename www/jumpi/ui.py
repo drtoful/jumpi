@@ -4,7 +4,7 @@ import functools
 
 from flask import Blueprint, redirect, url_for, request, session
 from jumpi.decorators import templated, authenticated
-from jumpi.api import APIAuth
+from jumpi.api import APIAuth, APISecrets
 
 uibp = Blueprint("ui", __name__)
 get = functools.partial(uibp.route, methods=['GET'])
@@ -43,3 +43,9 @@ def logout():
         del session['bearer']
     return redirect(url_for("ui.index"))
 
+@get("/secrets")
+@authenticated
+@templated("secrets.xhtml")
+def secrets():
+    api = APISecrets()
+    return dict(secrets = api.list(0, 10))
