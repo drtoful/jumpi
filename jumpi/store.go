@@ -159,9 +159,16 @@ func (store *Store) Keys(bucket []string, q string, skip, limit int) ([]string, 
 			if n < skip {
 				continue
 			}
-			if n > limit {
+			if n == skip+limit {
 				break
 			}
+
+			// check if key is a bucket
+			nb := b.Bucket(k)
+			if nb != nil {
+				continue
+			}
+
 			result = append(result, string(k))
 		}
 
