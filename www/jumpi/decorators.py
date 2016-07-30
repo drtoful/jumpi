@@ -8,7 +8,7 @@ import os
 from flask import render_template, request, session, redirect, url_for
 from flask import make_response
 from functools import wraps
-from jumpi.api import APIAuth
+from jumpi.api import APIAuth, APIStore
 
 def authenticated(f):
     @wraps(f)
@@ -16,6 +16,8 @@ def authenticated(f):
         def authenticate():
             return redirect(url_for('ui.login'))
 
+        if "store_locked" in session:
+            del session['store_locked']
         if session.get('bearer', None) is None:
             return authenticate()
 
@@ -24,6 +26,9 @@ def authenticated(f):
             del session['username']
             del session['bearer']
             return authenticate()
+
+        api = APIStore()
+        session['store_locked'] = api.status()
 
         return f(*args, **kwargs)
     return decorator

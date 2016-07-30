@@ -47,6 +47,13 @@
         <a name="top"></a>
 
         <div class="container">
+            {% if session.store_locked %}
+            <div class="alert alert-danger" role="alert">
+                <h4><span class="fa fa-warning"></span> Warning!</h4>
+                <p>The store is still locked. Some settings may not be saved and may cause errors. Unlock the store first, before continuing.</p>
+            </div>
+            {% endif %}
+
 {% block content %}{% endblock %}
         </div>
 

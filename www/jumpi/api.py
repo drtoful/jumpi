@@ -61,3 +61,8 @@ class APIAuth(object):
     def logout(self):
         ok, _ = api.get("/auth/logout")
         return ok
+
+class APIStore(object):
+    def status(self):
+        ok, _ = api.get("/store/status")
+        return ok

@@ -42,3 +42,4 @@ def logout():
         del session['username']
         del session['bearer']
     return redirect(url_for("ui.index"))
+
