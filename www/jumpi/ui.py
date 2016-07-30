@@ -1,8 +1,10 @@
 #-*- coding: utf-8 -*-
 
 import functools
-from flask import Blueprint
+
+from flask import Blueprint, redirect, url_for, request, session
 from jumpi.decorators import templated, authenticated
+from jumpi.api import APIAuth
 
 uibp = Blueprint("ui", __name__)
 get = functools.partial(uibp.route, methods=['GET'])
@@ -15,6 +17,28 @@ def index():
     return dict()
 
 @get("/login")
+@post("/login")
 @templated("login.xhtml")
 def login():
+    if request.method == "POST":
+        username = request.form.get("username", "")
+        password = request.form.get("password", "")
+
+        api = APIAuth()
+        sess = api.login(username, password)
+        if sess is None:
+            return dict(error = "Invalid Username/Password")
+
+        session['username'] = username
+        session['bearer'] = sess
+        return redirect(url_for("ui.index"))
+
     return dict()
+
+@get("/logout")
+def logout():
+    api = APIAuth()
+    if api.logout():
+        del session['username']
+        del session['bearer']
+    return redirect(url_for("ui.index"))

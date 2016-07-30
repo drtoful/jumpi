@@ -8,25 +8,22 @@ import os
 from flask import render_template, request, session, redirect, url_for
 from flask import make_response
 from functools import wraps
+from jumpi.api import APIAuth
 
 def authenticated(f):
     @wraps(f)
     def decorator(*args, **kwargs):
-        auth = request.authorization
-        def check_auth():
-            return True
-
         def authenticate():
             return redirect(url_for('ui.login'))
 
-        if not session.get('authenticated', None) and \
-            (not auth or not check_auth()):
+        if session.get('bearer', None) is None:
             return authenticate()
 
-        session['authenticated'] = True
-        session['username'] = auth['username']
-        if session.get('salt', None) is None:
-            session['salt'] = base64.b64encode(os.urandom(12))
+        api = APIAuth()
+        if not api.validate():
+            del session['username']
+            del session['bearer']
+            return authenticate()
 
         return f(*args, **kwargs)
     return decorator

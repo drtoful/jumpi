@@ -17,6 +17,38 @@
         <script src="/static/js/jquery.min.js"></script>
         <script src="/static/js/bootstrap.min.js"></script>
 
+        <nav class="navbar navbar-default navbar-static-top navbar-inverse">
+            <div class="container">
+                <!-- Header -->
+                <div class="navbar-header">
+                    <a class="navbar-brand" href="#">jumpi</a>
+                </div>
+
+                <!-- Links -->
+                <ul class="nav navbar-nav">
+                    <li><a href="#">Secrets</a></li>
+                    <li><a href="#">Targets</a></li>
+                    <li><a href="#">Roles</a></li>
+                    <li><a href="#">Users</a></li>
+                </ul>
+
+                <!-- User -->
+                {% if session.username %}
+                <div class="nav navbar-right">
+                    <ul class="nav navbar-nav">
+                        <li><a href="#">Welcome, {{ session.username }}</a></li>
+                        <li><a href="{{ url_for('ui.logout') }}"><span class="fa fa-sign-out"></span></a></li>
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+        </nav>
+
         <a name="top"></a>
+
+        <div class="container">
+{% block content %}{% endblock %}
+        </div>
+
     </body>
 </html>
