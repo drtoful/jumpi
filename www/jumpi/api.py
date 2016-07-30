@@ -86,3 +86,9 @@ class APISecrets(object):
             return keys
         return None
 
+    def set(self, name, type, data):
+        ok, err = api.post("/secrets", dict( \
+            id = name, type = type, data = data))
+        if not ok:
+            return err
+        return None

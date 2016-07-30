@@ -44,11 +44,28 @@ def logout():
     return redirect(url_for("ui.index"))
 
 @get("/secrets")
+@post("/secrets")
 @authenticated
 @templated("secrets.xhtml")
 def secrets():
     api = APISecrets()
-    return dict(secrets = api.list(0, 10))
+    error = None
+
+    if request.method == "POST":
+        type = 0
+        try:
+            type = int(request.form.get("type", 0))
+        except:
+            pass
+        name = request.form.get("name", "")
+        data = request.form.get("data", "")
+
+        err = api.set(name, type, data)
+        if not err is None:
+            error = err
+
+
+    return dict(secrets = api.list(0, 10), error = error)
 
 @get("/store")
 @post("/store")
