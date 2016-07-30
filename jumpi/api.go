@@ -33,6 +33,7 @@ var (
 	InternalServerError   = ErrorResponse{Status: http.StatusInternalServerError, Code: "err_internal", Description: "An internal server error has occured!"}
 	UnprocessableEntity   = ErrorResponse{Status: 422, Code: "err_unprocessable", Description: "Unable to process given entity!"}
 	AuthorizationRequired = ErrorResponse{Status: http.StatusUnauthorized, Code: "err_authorization_required", Description: "Please provide a valid Authorization Token to access this resource!"}
+	StoreUnlockedRequired = ErrorResponse{Status: http.StatusInternalServerError, Code: "store_locked", Description: "This operation needs unlocked store"}
 	BadRequest            = ErrorResponse{Status: http.StatusBadRequest, Code: "err_bad_request"}
 )
 
@@ -292,6 +293,16 @@ func LoginRequired(handler http.Handler) http.HandlerFunc {
 	}
 }
 
+func StoreUnlockRequired(handler http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if globalStore.IsLocked() {
+			StoreUnlockedRequired.Write(w)
+		} else {
+			handler.ServeHTTP(w, r)
+		}
+	}
+}
+
 func validate(username, password string) error {
 	hash, err := globalStore.Get(BucketMetaAdmins, username)
 	if err != nil {
@@ -516,7 +527,7 @@ func StartAPIServer(root string, store *Store) {
 		api.Path("/store/lock").Methods("POST").HandlerFunc(StackMiddleware(storeLock, LoginRequired))
 		api.Path("/store/status").Methods("GET").HandlerFunc(StackMiddleware(storeStatus, LoginRequired))
 
-		api.Path("/secrets").Methods("POST").HandlerFunc(StackMiddleware(secretSet, LoginRequired))
+		api.Path("/secrets").Methods("POST").HandlerFunc(StackMiddleware(secretSet, StoreUnlockRequired, LoginRequired))
 		api.Path("/secrets/{id}").Methods("DELETE").HandlerFunc(StackMiddleware(secretDelete, LoginRequired))
 
 		api.Path("/users").Methods("POST").HandlerFunc(StackMiddleware(userAdd, LoginRequired))
