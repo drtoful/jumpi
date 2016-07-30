@@ -143,6 +143,34 @@ func (store *Store) Get(bucket []string, key string) (string, error) {
 	return value, err
 }
 
+func (store *Store) Keys(bucket []string, q string, skip, limit int) ([]string, error) {
+	result := make([]string, 0)
+	err := store.db.View(func(tx *bolt.Tx) error {
+		b, err := traverseBuckets(bucket, tx)
+		if err != nil {
+			return nil
+		}
+
+		prefix := []byte(q)
+		c := b.Cursor()
+		n := -1
+		for k, _ := c.Seek(prefix); bytes.HasPrefix(k, prefix); k, _ = c.Next() {
+			n += 1
+			if n < skip {
+				continue
+			}
+			if n > limit {
+				break
+			}
+			result = append(result, string(k))
+		}
+
+		return nil
+	})
+
+	return result, err
+}
+
 func (store *Store) Delete(bucket []string, key string) error {
 	err := store.db.Update(func(tx *bolt.Tx) error {
 		b, err := traverseBuckets(bucket, tx)
