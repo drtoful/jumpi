@@ -429,13 +429,20 @@ func storeStatus(w http.ResponseWriter, r *http.Request) {
 func secretList(w http.ResponseWriter, r *http.Request) {
 	skip := 0
 	limit := 0
+
+	if err := r.ParseForm(); err != nil {
+		BadRequest.Description = err.Error()
+		BadRequest.Write(w)
+		return
+	}
+
 	if vals, ok := r.Form["skip"]; ok {
-		if i, err := strconv.ParseInt(vals[0], 10, 64); err != nil {
+		if i, err := strconv.ParseInt(vals[0], 10, 64); err == nil {
 			skip = int(i)
 		}
 	}
 	if vals, ok := r.Form["limit"]; ok {
-		if i, err := strconv.ParseInt(vals[0], 10, 64); err != nil {
+		if i, err := strconv.ParseInt(vals[0], 10, 64); err == nil {
 			limit = int(i)
 		}
 	}
