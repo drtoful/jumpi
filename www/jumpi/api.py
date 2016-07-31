@@ -44,6 +44,17 @@ class API(object):
             pass
         return False, None
 
+    def delete(self, endpoint):
+        uri = "%s%s" % (self.base_uri, endpoint)
+        bearer = session.get("bearer", "_no_auth_")
+        try:
+            r = requests.delete(uri, headers = {
+                'Authorization': "Bearer %s" % bearer})
+            return self._parse_response(r)
+        except:
+            pass
+        return False, None
+
 api = API()
 
 class APIAuth(object):
@@ -102,3 +113,36 @@ class APISecrets(object):
         if not ok:
             return err
         return None
+
+    def delete(self, id):
+        ok, _ = api.delete("/secrets/%s" % id)
+        return ok
+
+class APITargets(object):
+    def list(self, skip, limit):
+        ok, vals = api.get("/targets", dict( \
+            skip = skip, limit = limit))
+
+        if ok:
+            nvals = []
+            for k in vals:
+                try:
+                    k["value"] = json.loads(k["value"])
+                    nvals = nvals + [k]
+                except:
+                    pass
+
+            return nvals
+        return None
+
+    def set(self, user, hostname, port, secret):
+        ok, err = api.post("/targets", dict( \
+            username = user, hostname = hostname, \
+            port = port, secret = secret))
+        if not ok:
+            return err
+        return None
+
+    def delete(self, id):
+        ok, _ = api.delete("/targets/%s" % id)
+        return ok
