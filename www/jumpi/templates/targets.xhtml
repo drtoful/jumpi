@@ -1,0 +1,27 @@
+{% extends "base.xhtml" %}
+
+{% block content %}
+<h3><span class="fa fa-terminal"></span> Targets</h3>
+
+<table class="table table-condensed table-hover table-bordered">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Secret</th>
+            <th>&nbsp;</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% if targets %}
+    {% for t in targets %}
+    {% endfor %}
+    {% else %}
+        <tr>
+            <td colspan="3">
+                no targets stored
+            </td>
+        </tr>
+    {% endif %}
+    </tbody>
+</table>
+{% endblock %}

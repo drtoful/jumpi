@@ -88,3 +88,9 @@ def store():
         return redirect(url_for("ui.store"))
 
     return dict()
+
+@get("/targets")
+@authenticated
+@templated("targets.xhtml")
+def targets():
+    return dict()
