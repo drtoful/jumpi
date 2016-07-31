@@ -80,10 +80,20 @@ class APIStore(object):
 
 class APISecrets(object):
     def list(self, skip, limit):
-        ok, keys = api.get("/secrets", dict( \
+        ok, vals = api.get("/secrets", dict( \
             skip = skip, limit = limit))
+
         if ok:
-            return keys
+            nvals = []
+            for k in vals:
+                try:
+                    k["value"] = json.loads(k["value"])
+                    del k["value"]["data"]
+                    nvals = nvals + [k]
+                except:
+                    pass
+
+            return nvals
         return None
 
     def set(self, name, type, data):

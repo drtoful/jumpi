@@ -447,7 +447,7 @@ func secretList(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	keys, err := globalStore.Keys(BucketSecrets, "", skip, limit)
+	keys, err := globalStore.Scan(BucketSecrets, "", skip, limit)
 	if err != nil {
 		SecretListFailed := ErrorResponse{Status: http.StatusForbidden, Code: "err_secret_list_failed"}
 		SecretListFailed.Description = err.Error()

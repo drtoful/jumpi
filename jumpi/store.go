@@ -39,6 +39,11 @@ type metaKeyDerivation struct {
 	Challenge  string `json:"challenge"`
 }
 
+type keyvalue struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
 var (
 	BucketMeta        = []string{"meta"}
 	BucketMetaAdmins  = []string{"meta", "admins"}
@@ -143,8 +148,8 @@ func (store *Store) Get(bucket []string, key string) (string, error) {
 	return value, err
 }
 
-func (store *Store) Keys(bucket []string, q string, skip, limit int) ([]string, error) {
-	result := make([]string, 0)
+func (store *Store) Scan(bucket []string, q string, skip, limit int) ([]*keyvalue, error) {
+	result := make([]*keyvalue, 0)
 	err := store.db.View(func(tx *bolt.Tx) error {
 		b, err := traverseBuckets(bucket, tx)
 		if err != nil {
@@ -173,7 +178,8 @@ func (store *Store) Keys(bucket []string, q string, skip, limit int) ([]string, 
 				continue
 			}
 
-			result = append(result, string(k))
+			v := string(b.Get([]byte(k)))
+			result = append(result, &keyvalue{Key: string(k), Value: string(v)})
 		}
 
 		return nil
