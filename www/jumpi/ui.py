@@ -64,8 +64,12 @@ def secrets():
         if not err is None:
             error = err
 
-
-    return dict(secrets = api.list(0, 10), error = error)
+    page = 0
+    try:
+        page = int(request.args.get("p", 0))
+    except:
+        pass
+    return dict(secrets = api.list(page*10, 10), error = error, page = page)
 
 @get("/store")
 @post("/store")
