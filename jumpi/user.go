@@ -56,3 +56,7 @@ func (user *User) Load(store *Store) error {
 	user.Name = name
 	return nil
 }
+
+func (user *User) Delete(store *Store) error {
+	return store.Delete(BucketUsers, user.KeyFingerprint)
+}

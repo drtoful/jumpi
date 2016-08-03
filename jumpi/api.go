@@ -510,6 +510,40 @@ func secretDelete(w http.ResponseWriter, r *http.Request) {
 	SecretDeleteSuccessful.Write(w)
 }
 
+func userList(w http.ResponseWriter, r *http.Request) {
+	skip := 0
+	limit := 0
+
+	if err := r.ParseForm(); err != nil {
+		BadRequest.Description = err.Error()
+		BadRequest.Write(w)
+		return
+	}
+
+	if vals, ok := r.Form["skip"]; ok {
+		if i, err := strconv.ParseInt(vals[0], 10, 64); err == nil {
+			skip = int(i)
+		}
+	}
+	if vals, ok := r.Form["limit"]; ok {
+		if i, err := strconv.ParseInt(vals[0], 10, 64); err == nil {
+			limit = int(i)
+		}
+	}
+
+	keys, err := globalStore.Scan(BucketUsers, "", skip, limit)
+	if err != nil {
+		UserListFailed := ErrorResponse{Status: http.StatusForbidden, Code: "err_user_list_failed"}
+		UserListFailed.Description = err.Error()
+		UserListFailed.Write(w)
+		return
+	}
+
+	UserList := Response{Status: http.StatusOK}
+	UserList.Content = keys
+	UserList.Write(w)
+}
+
 func userAdd(w http.ResponseWriter, r *http.Request) {
 	type _json struct {
 		Name string `json:"name" format:"[a-zA-Z0-9\-\_]+"`
@@ -542,6 +576,115 @@ func userAdd(w http.ResponseWriter, r *http.Request) {
 	UserCreateSuccessful.Write(w)
 }
 
+func userDelete(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	user := &User{
+		KeyFingerprint: id,
+	}
+	if err := user.Delete(globalStore); err != nil {
+		UserDeleteFailed := ErrorResponse{Status: http.StatusForbidden, Code: "err_user_delete_failed"}
+		UserDeleteFailed.Description = err.Error()
+		UserDeleteFailed.Write(w)
+		return
+	}
+
+	log.Printf("audit: %v removed user '%s'\n", context.Get(r, "user"), id)
+	UserDeleteSuccessful := Response{Status: http.StatusOK}
+	UserDeleteSuccessful.Write(w)
+}
+
+func targetList(w http.ResponseWriter, r *http.Request) {
+	skip := 0
+	limit := 0
+
+	if err := r.ParseForm(); err != nil {
+		BadRequest.Description = err.Error()
+		BadRequest.Write(w)
+		return
+	}
+
+	if vals, ok := r.Form["skip"]; ok {
+		if i, err := strconv.ParseInt(vals[0], 10, 64); err == nil {
+			skip = int(i)
+		}
+	}
+	if vals, ok := r.Form["limit"]; ok {
+		if i, err := strconv.ParseInt(vals[0], 10, 64); err == nil {
+			limit = int(i)
+		}
+	}
+
+	keys, err := globalStore.Scan(BucketTargets, "", skip, limit)
+	if err != nil {
+		TargetListFailed := ErrorResponse{Status: http.StatusForbidden, Code: "err_target_list_failed"}
+		TargetListFailed.Description = err.Error()
+		TargetListFailed.Write(w)
+		return
+	}
+
+	TargetList := Response{Status: http.StatusOK}
+	TargetList.Content = keys
+	TargetList.Write(w)
+}
+
+func targetAdd(w http.ResponseWriter, r *http.Request) {
+	type _json struct {
+		Username string `json:"user" format:"\w+"`
+		Hostname string `json:"host" format:".+"`
+		Port     int    `json:"port"`
+		Secret   string `json:"secret" format:".+"`
+	}
+	var req _json
+
+	if err := CheckRequestObject(r, &req); err != nil {
+		BadRequest.Description = err.Error()
+		BadRequest.Write(w)
+		return
+	}
+
+	if req.Port < 1 || req.Port > 65535 {
+		BadRequest.Description = "port number out of range"
+		BadRequest.Write(w)
+		return
+	}
+
+	target := &Target{
+		Username: req.Username,
+		Hostname: req.Hostname,
+		Port:     req.Port,
+		Secret:   &Secret{ID: req.Secret},
+	}
+
+	if err := target.Store(globalStore); err != nil {
+		TargetCreateFailed := ErrorResponse{Status: http.StatusForbidden, Code: "err_target_create_failed"}
+		TargetCreateFailed.Description = err.Error()
+		TargetCreateFailed.Write(w)
+		return
+	}
+
+	log.Printf("audit: %v added target '%s' referencing secret '%s'\n", context.Get(r, "user"), target.ID(), req.Secret)
+	TargetCreateSuccessful := Response{Status: http.StatusOK}
+	TargetCreateSuccessful.Write(w)
+}
+
+func targetDelete(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	if err := globalStore.Delete(BucketTargets, id); err != nil {
+		TargetDeleteFailed := ErrorResponse{Status: http.StatusForbidden, Code: "err_target_delete_failed"}
+		TargetDeleteFailed.Description = err.Error()
+		TargetDeleteFailed.Write(w)
+		return
+	}
+
+	log.Printf("audit: %v removed target '%s'\n", context.Get(r, "user"), id)
+	TargetDeleteSuccessful := Response{Status: http.StatusOK}
+	TargetDeleteSuccessful.Write(w)
+}
+
 func StartAPIServer(root string, store *Store) {
 	globalStore = store
 	go func() {
@@ -566,7 +709,13 @@ func StartAPIServer(root string, store *Store) {
 		api.Path("/secrets").Methods("POST").HandlerFunc(StackMiddleware(secretSet, StoreUnlockRequired, LoginRequired))
 		api.Path("/secrets/{id}").Methods("DELETE").HandlerFunc(StackMiddleware(secretDelete, LoginRequired))
 
+		api.Path("/users").Methods("GET").HandlerFunc(StackMiddleware(userList, LoginRequired))
 		api.Path("/users").Methods("POST").HandlerFunc(StackMiddleware(userAdd, LoginRequired))
+		api.Path("/users/{id}").Methods("DELETE").HandlerFunc(StackMiddleware(userDelete, LoginRequired))
+
+		api.Path("/targets").Methods("GET").HandlerFunc(StackMiddleware(targetList, LoginRequired))
+		api.Path("/targets").Methods("POST").HandlerFunc(StackMiddleware(targetAdd, LoginRequired))
+		api.Path("/targets/{id}").Methods("DELETE").HandlerFunc(StackMiddleware(targetDelete, LoginRequired))
 
 		logger := &logger{log.New(os.Stdout, "", 0)}
 		n := negroni.New(negroni.NewRecovery(), logger)
