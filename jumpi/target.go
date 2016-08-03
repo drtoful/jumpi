@@ -43,6 +43,10 @@ func (target *Target) LoadSecret(store *Store) error {
 		return err
 	}
 
+	if len(secret) == 0 {
+		return ErrNoSecret
+	}
+
 	target.Secret = &Secret{ID: secret}
 	if err := target.Secret.Load(store); err != nil {
 		return err

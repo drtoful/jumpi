@@ -24,7 +24,7 @@ var (
 )
 
 // parse a target declaration in the form user@host[:port]
-func (server *server) parseTarget(id string) *Target {
+func (server *server) parseTarget(session, id string) *Target {
 	var user string
 	var port int = 22
 	var host string
@@ -34,13 +34,15 @@ func (server *server) parseTarget(id string) *Target {
 		user = splits[0]
 		id = splits[1]
 	} else {
+		log.Printf("ssh[%s]: incorrect jump target format ('%s')\n", session, id)
 		return nil
 	}
 
 	splits = strings.Split(id, ":")
 	if len(splits) == 2 {
 		host = splits[0]
-		if i, err := strconv.ParseInt(splits[1], 10, 32); err == nil {
+		if i, err := strconv.ParseInt(splits[1], 10, 32); err != nil {
+			log.Printf("ssh[%s]: unable to parse port number ('%s'): %s\n", session, id, err.Error())
 			return nil
 		} else {
 			port = int(i)
@@ -48,6 +50,7 @@ func (server *server) parseTarget(id string) *Target {
 	} else if len(splits) == 1 {
 		host = id
 	} else {
+		log.Printf("ssh[%s]: no hostname provided ('%s')\n", session, id)
 		return nil
 	}
 
@@ -57,6 +60,7 @@ func (server *server) parseTarget(id string) *Target {
 		Port:     port,
 	}
 	if err := target.LoadSecret(server.store); err != nil {
+		log.Printf("ssh[%s]: unable to load secret for target '%s': %s\n", session, id, err.Error())
 		return nil
 	}
 	return target
@@ -76,6 +80,7 @@ func (server *server) handle(conn net.Conn) {
 	perm := sshConn.Permissions
 	session := perm.Extensions["session"]
 	log.Printf("ssh[%s]: new connection from %s\n", session, conn.RemoteAddr().String())
+	defer log.Printf("ssh[%s]: session ended \n", session)
 
 	newChannel := <-chans
 	if newChannel == nil {
@@ -85,10 +90,11 @@ func (server *server) handle(conn net.Conn) {
 
 	var target *Target
 	if newChannel.ChannelType() == "session" {
-		target = server.parseTarget(sshConn.User())
+		target = server.parseTarget(session, sshConn.User())
 	}
 
 	if target == nil {
+		log.Printf("ssh[%s]: unable to parse target '%s'\n", session, sshConn.User())
 		return
 	}
 
@@ -96,7 +102,6 @@ func (server *server) handle(conn net.Conn) {
 	if err := target.Connect(newChannel, chans); err != nil {
 		log.Printf("ssh[%s]: error: %s\n", session, err.Error())
 	}
-	log.Printf("ssh[%s]: session ended\n", session)
 }
 
 func (server *server) serve() error {
