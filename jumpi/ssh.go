@@ -1,6 +1,7 @@
 package jumpi
 
 import (
+	"crypto/rand"
 	"crypto/sha256"
 	"errors"
 	"io/ioutil"
@@ -62,20 +63,23 @@ func (server *server) parseTarget(id string) *Target {
 }
 
 func (server *server) handle(conn net.Conn) {
-	log.Printf("ssh: new connection from %s\n", conn.RemoteAddr().String())
 	defer conn.Close()
 
 	sshConn, chans, reqs, err := ssh.NewServerConn(conn, server.config)
 	if err != nil {
-		log.Printf("ssh: error for '%s': %s\n", conn.RemoteAddr().String(), err.Error())
+		log.Printf("ssh[main]: unable to create SSH connection for '%s': %s\n", conn.RemoteAddr().String(), err.Error())
 		return
 	}
 	defer sshConn.Close()
 	go ssh.DiscardRequests(reqs)
 
+	perm := sshConn.Permissions
+	session := perm.Extensions["session"]
+	log.Printf("ssh[%s]: new connection from %s\n", session, conn.RemoteAddr().String())
+
 	newChannel := <-chans
 	if newChannel == nil {
-		log.Printf("ssh: error for '%s': no channel found\n", conn.RemoteAddr().String())
+		log.Printf("ssh[%s]: error: no channel found\n", session)
 		return
 	}
 
@@ -88,12 +92,15 @@ func (server *server) handle(conn net.Conn) {
 		return
 	}
 
+	log.Printf("ssh[%s]: connecting to %s\n", session, target.ID())
 	if err := target.Connect(newChannel, chans); err != nil {
-		log.Printf("ssh: error for '%s': %s\n", conn.RemoteAddr().String(), err.Error())
+		log.Printf("ssh[%s]: error: %s\n", session, err.Error())
 	}
+	log.Printf("ssh[%s]: session ended\n", session)
 }
 
 func (server *server) serve() error {
+	log.Println("starting SSH server on port 2022")
 	conn, err := net.Listen("tcp", ":2022")
 	if err != nil {
 		return err
@@ -103,7 +110,7 @@ func (server *server) serve() error {
 		for {
 			client, err := conn.Accept()
 			if err != nil {
-				log.Printf("ssh connect error: %s\n", err.Error())
+				log.Printf("ssh[main]: connect error: %s\n", err.Error())
 				continue
 			}
 
@@ -115,13 +122,28 @@ func (server *server) serve() error {
 	return nil
 }
 
+func generateSessionID() (string, error) {
+	sess := make([]byte, 16)
+	if _, err := rand.Read(sess); err != nil {
+		return "", err
+	}
+
+	return utils.Hexlify(sess), nil
+}
+
 func (server *server) auth(conn ssh.ConnMetadata, key ssh.PublicKey) (*ssh.Permissions, error) {
+	session, err := generateSessionID()
+	if err != nil {
+		return nil, err
+	}
+
 	k := key.Marshal()
 	t := key.Type()
 	perm := &ssh.Permissions{
 		Extensions: map[string]string{
 			"pubKey":     string(k),
 			"pubKeyType": t,
+			"session":    session,
 		},
 	}
 
@@ -133,6 +155,7 @@ func (server *server) auth(conn ssh.ConnMetadata, key ssh.PublicKey) (*ssh.Permi
 		return nil, err
 	}
 	perm.Extensions["user"] = user.Name
+	log.Printf("ssh[%s]: user '%s' successfully logged on\n", session, user.Name)
 
 	return perm, nil
 }
