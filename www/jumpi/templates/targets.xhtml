@@ -24,4 +24,52 @@
     {% endif %}
     </tbody>
 </table>
+
+<nav aria-label="pages">
+    <ul class="pager">
+        {% if page > 0 %}
+        <li class="previous"><a href="{{ url_for('ui.targets') }}?p={{ page-1 }}"><span aria-hidden="true">&larr;</span> Previous</a></li>
+        {% endif %}
+        {% if secrets|length == 10 %}
+        <li class="next"><a href="{{ url_for('ui.targets') }}?p={{ page+1 }}">Next <span aria-hidden="true">&rarr;</span></a></li>
+        {% endif %}
+    </ul>
+</nav>
+
+{% if error %}
+<div class="alert alert-danger" role="alert">
+    <b>Error!</b> {{ error }}
+</div>
+{% endif %}
+
+<div class="row">
+    <div class="col-md-3"></div>
+    <div class="col-md-6">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                Add Target
+            </div>
+            <div class="panel-body">
+                <form method="POST" action="{{ url_for('ui.targets') }}">
+                    <div class="form-group">
+                        <input type="text" class="form-control" name="user" placeholder="Username" />
+                    </div>
+                    <div class="form-group">
+                        <input type="text" class="form-control" name="host" placeholder="Hostname" />
+                    </div>
+                    <div class="form-group">
+                        <input type="number" class="form-control" name="host" placeholder="Port" min="1" max="65535" />
+                    </div>
+                    <div class="form-group">
+                        <input type="text" class="form-control" name="secret" placeholder="Secret" />
+                    </div>
+                    <div class="form-group">
+                        <button class="btn btn-primary">Add Target</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3"></div>
+</div>
 {% endblock %}

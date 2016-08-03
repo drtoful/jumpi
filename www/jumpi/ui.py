@@ -4,7 +4,7 @@ import functools
 
 from flask import Blueprint, redirect, url_for, request, session
 from jumpi.decorators import templated, authenticated
-from jumpi.api import APIAuth, APISecrets, APIStore
+from jumpi.api import APIAuth, APISecrets, APIStore, APITargets
 
 uibp = Blueprint("ui", __name__)
 get = functools.partial(uibp.route, methods=['GET'])
@@ -90,7 +90,32 @@ def store():
     return dict()
 
 @get("/targets")
+@post("/targets")
 @authenticated
 @templated("targets.xhtml")
 def targets():
-    return dict()
+    api = APITargets()
+    error = None
+
+    if request.method == "POST":
+        user = request.form.get("user", "")
+        host = request.form.get("host", "")
+        port = 0
+        try:
+            port = int(request.form.get("port", 0))
+        except:
+            pass
+        secret = request.form.get("secret", "")
+
+        err = api.set(user, host, port, secret)
+        if not err is None:
+            error = err
+
+
+    page = 0
+    try:
+        page = int(request.args.get("p", 0))
+    except:
+        pass
+
+    return dict(targets = api.list(page*10, 10), page = page, error = error)
