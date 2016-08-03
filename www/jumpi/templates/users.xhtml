@@ -1,0 +1,69 @@
+{% extends "base.xhtml" %}
+
+{% block content %}
+<h3><span class="fa fa-user"></span> Users</h3>
+
+<table class="table table-condensed table-hover table-bordered">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Fingerprint</th>
+            <th>&nbsp;</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% if users %}
+    {% for t in users %}
+    {% endfor %}
+    {% else %}
+        <tr>
+            <td colspan="3">
+                no users stored
+            </td>
+        </tr>
+    {% endif %}
+    </tbody>
+</table>
+
+<nav aria-label="pages">
+    <ul class="pager">
+        {% if page > 0 %}
+        <li class="previous"><a href="{{ url_for('ui.users') }}?p={{ page-1 }}"><span aria-hidden="true">&larr;</span> Previous</a></li>
+        {% endif %}
+        {% if secrets|length == 10 %}
+        <li class="next"><a href="{{ url_for('ui.users') }}?p={{ page+1 }}">Next <span aria-hidden="true">&rarr;</span></a></li>
+        {% endif %}
+    </ul>
+</nav>
+
+{% if error %}
+<div class="alert alert-danger" role="alert">
+    <b>Error!</b> {{ error }}
+</div>
+{% endif %}
+
+<div class="row">
+    <div class="col-md-3"></div>
+    <div class="col-md-6">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                Add User
+            </div>
+            <div class="panel-body">
+                <form method="POST" action="{{ url_for('ui.users') }}">
+                    <div class="form-group">
+                        <input type="text" class="form-control" name="name" placeholder="Name" />
+                    </div>
+                    <div class="form-group">
+                        <input type="text" class="form-control" name="public" placeholder="Public Key (ssh-rsa AAA...)" />
+                    </div>
+                    <div class="form-group">
+                        <button class="btn btn-primary">Add User</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3"></div>
+</div>
+{% endblock %}

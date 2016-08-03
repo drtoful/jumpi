@@ -146,3 +146,31 @@ class APITargets(object):
     def delete(self, id):
         ok, _ = api.delete("/targets/%s" % id)
         return ok
+
+class APIUsers(object):
+    def list(self, skip, limit):
+        ok, vals = api.get("/users", dict( \
+            skip = skip, limit = limit))
+
+        if ok:
+            nvals = []
+            for k in vals:
+                try:
+                    k["value"] = json.loads(k["value"])
+                    nvals = nvals + [k]
+                except:
+                    pass
+
+            return nvals
+        return None
+
+    def set(self, name, pub):
+        ok, err = api.post("/users", dict( \
+            name = name, pub = pub))
+        if not ok:
+            return err
+        return None
+
+    def delete(self, id):
+        ok, _ = api.delete("/users/%s" % id)
+        return ok
