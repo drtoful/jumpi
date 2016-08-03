@@ -124,20 +124,12 @@ class APITargets(object):
             skip = skip, limit = limit))
 
         if ok:
-            nvals = []
-            for k in vals:
-                try:
-                    k["value"] = json.loads(k["value"])
-                    nvals = nvals + [k]
-                except:
-                    pass
-
-            return nvals
+            return vals
         return None
 
     def set(self, user, hostname, port, secret):
         ok, err = api.post("/targets", dict( \
-            username = user, hostname = hostname, \
+            user = user, host = hostname, \
             port = port, secret = secret))
         if not ok:
             return err

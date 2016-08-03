@@ -14,6 +14,11 @@
     <tbody>
     {% if users %}
     {% for t in users %}
+        <tr>
+            <td>{{ t.value }}</td>
+            <td>{{ t.key }}</td>
+            <td>&nbsp;</td>
+        </tr>
     {% endfor %}
     {% else %}
         <tr>
