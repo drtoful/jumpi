@@ -153,15 +153,7 @@ class APIUsers(object):
             skip = skip, limit = limit))
 
         if ok:
-            nvals = []
-            for k in vals:
-                try:
-                    k["value"] = json.loads(k["value"])
-                    nvals = nvals + [k]
-                except:
-                    pass
-
-            return nvals
+            return vals
         return None
 
     def set(self, name, pub):
