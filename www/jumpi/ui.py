@@ -71,6 +71,15 @@ def secrets():
         pass
     return dict(secrets = api.list(page*10, 10), error = error, page = page)
 
+@get("/secrets/delete")
+@authenticated
+def delete_secret():
+    id = request.args.get("id", None)
+    if not id is None:
+        api = APISecrets()
+        api.delete(id)
+    return redirect(url_for("ui.secrets"))
+
 @get("/store")
 @post("/store")
 @authenticated
@@ -120,6 +129,15 @@ def targets():
 
     return dict(targets = api.list(page*10, 10), page = page, error = error)
 
+@get("/targets/delete")
+@authenticated
+def delete_target():
+    id = request.args.get("id", None)
+    if not id is None:
+        api = APITargets()
+        api.delete(id)
+    return redirect(url_for("ui.targets"))
+
 @get("/users")
 @post("/users")
 @authenticated
@@ -143,3 +161,12 @@ def users():
         pass
 
     return dict(users = api.list(page*10, 10), page = page, error = error)
+
+@get("/users/delete")
+@authenticated
+def delete_user():
+    id = request.args.get("id", None)
+    if not id is None:
+        api = APIUsers()
+        api.delete(id)
+    return redirect(url_for("ui.users"))

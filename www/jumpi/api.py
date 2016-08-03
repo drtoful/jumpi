@@ -44,11 +44,11 @@ class API(object):
             pass
         return False, None
 
-    def delete(self, endpoint):
+    def delete(self, endpoint, data = None):
         uri = "%s%s" % (self.base_uri, endpoint)
         bearer = session.get("bearer", "_no_auth_")
         try:
-            r = requests.delete(uri, headers = {
+            r = requests.delete(uri, params = data, headers = {
                 'Authorization': "Bearer %s" % bearer})
             return self._parse_response(r)
         except:
@@ -115,7 +115,7 @@ class APISecrets(object):
         return None
 
     def delete(self, id):
-        ok, _ = api.delete("/secrets/%s" % id)
+        ok, _ = api.delete("/secrets", dict(id = id ))
         return ok
 
 class APITargets(object):
@@ -136,7 +136,7 @@ class APITargets(object):
         return None
 
     def delete(self, id):
-        ok, _ = api.delete("/targets/%s" % id)
+        ok, _ = api.delete("/targets", dict(id = id ))
         return ok
 
 class APIUsers(object):
@@ -156,5 +156,5 @@ class APIUsers(object):
         return None
 
     def delete(self, id):
-        ok, _ = api.delete("/users/%s" % id)
+        ok, _ = api.delete("/users", dict(id = id ))
         return ok

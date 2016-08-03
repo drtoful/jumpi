@@ -492,8 +492,22 @@ func secretSet(w http.ResponseWriter, r *http.Request) {
 }
 
 func secretDelete(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
+	if err := r.ParseForm(); err != nil {
+		BadRequest.Description = err.Error()
+		BadRequest.Write(w)
+		return
+	}
+
+	id := ""
+	if vals, ok := r.Form["id"]; ok {
+		id = vals[0]
+	}
+
+	if len(id) == 0 {
+		BadRequest.Description = "no id given"
+		BadRequest.Write(w)
+		return
+	}
 
 	secret := &Secret{
 		ID: id,
@@ -577,8 +591,22 @@ func userAdd(w http.ResponseWriter, r *http.Request) {
 }
 
 func userDelete(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
+	if err := r.ParseForm(); err != nil {
+		BadRequest.Description = err.Error()
+		BadRequest.Write(w)
+		return
+	}
+
+	id := ""
+	if vals, ok := r.Form["id"]; ok {
+		id = vals[0]
+	}
+
+	if len(id) == 0 {
+		BadRequest.Description = "no id given"
+		BadRequest.Write(w)
+		return
+	}
 
 	user := &User{
 		KeyFingerprint: id,
@@ -670,8 +698,22 @@ func targetAdd(w http.ResponseWriter, r *http.Request) {
 }
 
 func targetDelete(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
+	if err := r.ParseForm(); err != nil {
+		BadRequest.Description = err.Error()
+		BadRequest.Write(w)
+		return
+	}
+
+	id := ""
+	if vals, ok := r.Form["id"]; ok {
+		id = vals[0]
+	}
+
+	if len(id) == 0 {
+		BadRequest.Description = "no id given"
+		BadRequest.Write(w)
+		return
+	}
 
 	if err := globalStore.Delete(BucketTargets, id); err != nil {
 		TargetDeleteFailed := ErrorResponse{Status: http.StatusForbidden, Code: "err_target_delete_failed"}
@@ -707,15 +749,15 @@ func StartAPIServer(root string, store *Store) {
 
 		api.Path("/secrets").Methods("GET").HandlerFunc(StackMiddleware(secretList, LoginRequired))
 		api.Path("/secrets").Methods("POST").HandlerFunc(StackMiddleware(secretSet, StoreUnlockRequired, LoginRequired))
-		api.Path("/secrets/{id}").Methods("DELETE").HandlerFunc(StackMiddleware(secretDelete, LoginRequired))
+		api.Path("/secrets").Methods("DELETE").HandlerFunc(StackMiddleware(secretDelete, LoginRequired))
 
 		api.Path("/users").Methods("GET").HandlerFunc(StackMiddleware(userList, LoginRequired))
 		api.Path("/users").Methods("POST").HandlerFunc(StackMiddleware(userAdd, LoginRequired))
-		api.Path("/users/{id}").Methods("DELETE").HandlerFunc(StackMiddleware(userDelete, LoginRequired))
+		api.Path("/users").Methods("DELETE").HandlerFunc(StackMiddleware(userDelete, LoginRequired))
 
 		api.Path("/targets").Methods("GET").HandlerFunc(StackMiddleware(targetList, LoginRequired))
 		api.Path("/targets").Methods("POST").HandlerFunc(StackMiddleware(targetAdd, LoginRequired))
-		api.Path("/targets/{id}").Methods("DELETE").HandlerFunc(StackMiddleware(targetDelete, LoginRequired))
+		api.Path("/targets").Methods("DELETE").HandlerFunc(StackMiddleware(targetDelete, LoginRequired))
 
 		logger := &logger{log.New(os.Stdout, "", 0)}
 		n := negroni.New(negroni.NewRecovery(), logger)
