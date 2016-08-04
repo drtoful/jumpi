@@ -1,7 +1,6 @@
 #-*- coding: utf-8 -*-
 
 import json
-import bcrypt
 import base64
 import os
 

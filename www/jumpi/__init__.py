@@ -1,8 +1,6 @@
 #-*- coding: utf-8 -*-
 
 from flask import Flask
-from flaskext.markdown import Markdown
-
 from jumpi.config import JumpiConfig
 
 def create_app(modules="MODULES"):
