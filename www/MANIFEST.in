@@ -1,0 +1,2 @@
+recursive-include jumpi/templates *
+recursive-include jumpi/static *
