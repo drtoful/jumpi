@@ -1,0 +1,81 @@
+{% extends "base.xhtml" %}
+
+{% block content %}
+<h3><span class="fa fa-puzzle-piece"></span> Roles</h3>
+
+<table class="table table-condensed table-hover table-bordered">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>User Regex</th>
+            <th>Target Regex</th>
+            <th>&nbsp;</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% if roles %}
+    {% for r in roles %}
+        <tr>
+            <td>{{ r.key }}</td>
+            <td>{{ r.value.rex_user }}</td>
+            <td>{{ r.value.rex_target }}</td>
+            <td>
+                <a href="{{ url_for('ui.delete_role') }}?id={{ r.key }}"><span class="fa fa-trash"></span></a>
+            </td>
+        </tr>
+    {% endfor %}
+    {% else %}
+        <tr>
+            <td colspan="3">
+                no roles stored
+            </td>
+        </tr>
+    {% endif %}
+    </tbody>
+</table>
+
+<nav aria-label="pages">
+    <ul class="pager">
+        {% if page > 0 %}
+        <li class="previous"><a href="{{ url_for('ui.roles') }}?p={{ page-1 }}"><span aria-hidden="true">&larr;</span> Previous</a></li>
+        {% endif %}
+        {% if secrets|length == 10 %}
+        <li class="next"><a href="{{ url_for('ui.roles') }}?p={{ page+1 }}">Next <span aria-hidden="true">&rarr;</span></a></li>
+        {% endif %}
+    </ul>
+</nav>
+
+{% if error %}
+<div class="alert alert-danger" role="alert">
+    <b>Error!</b> {{ error }}
+</div>
+{% endif %}
+
+<div class="row">
+    <div class="col-md-3"></div>
+    <div class="col-md-6">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                Add Role
+            </div>
+            <div class="panel-body">
+                <form method="POST" action="{{ url_for('ui.roles') }}">
+                    <div class="form-group">
+                        <input type="text" class="form-control" name="name" placeholder="Name" />
+                    </div>
+                    <div class="form-group">
+                        <input type="text" class="form-control" name="rex_user" placeholder="User Regex" />
+                    </div>
+                    <div class="form-group">
+                        <input type="text" class="form-control" name="rex_target" placeholder="Target Regex" />
+                    </div>
+                    <div class="form-group">
+                        <button class="btn btn-primary">Add Role</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3"></div>
+</div>
+{% endblock %}

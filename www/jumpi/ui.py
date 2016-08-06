@@ -4,7 +4,8 @@ import functools
 
 from flask import Blueprint, redirect, url_for, request, session
 from jumpi.decorators import templated, authenticated
-from jumpi.api import APIAuth, APISecrets, APIStore, APITargets, APIUsers
+from jumpi.api import APIAuth, APISecrets, APIStore
+from jumpi.api import APITargets, APIUsers, APIRoles
 
 uibp = Blueprint("ui", __name__)
 get = functools.partial(uibp.route, methods=['GET'])
@@ -170,3 +171,37 @@ def delete_user():
         api = APIUsers()
         api.delete(id)
     return redirect(url_for("ui.users"))
+
+@get("/roles")
+@post("/roles")
+@authenticated
+@templated("roles.xhtml")
+def roles():
+    api = APIRoles()
+    error = None
+
+    if request.method == "POST":
+        name = request.form.get("name", "")
+        rex_user = request.form.get("rex_user", "")
+        rex_target = request.form.get("rex_target", "")
+
+        err = api.set(name, rex_user, rex_target)
+        if not err is None:
+            error = err
+
+    page = 0
+    try:
+        page = int(request.args.get("p", 0))
+    except:
+        pass
+
+    return dict(roles = api.list(page*10, 10), page = page, error = error)
+
+@get("/roles/delete")
+@authenticated
+def delete_role():
+    id = request.args.get("id", None)
+    if not id is None:
+        api = APIRoles()
+        api.delete(id)
+    return redirect(url_for("ui.roles"))

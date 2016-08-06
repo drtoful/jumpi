@@ -158,3 +158,31 @@ class APIUsers(object):
     def delete(self, id):
         ok, _ = api.delete("/users", dict(id = id ))
         return ok
+
+class APIRoles(object):
+    def list(self, skip, limit):
+        ok, vals = api.get("/roles", dict( \
+            skip = skip, limit = limit))
+
+        if ok:
+            nvals = []
+            for k in vals:
+                try:
+                    k["value"] = json.loads(k["value"])
+                    nvals = nvals + [k]
+                except:
+                    pass
+
+            return nvals
+        return None
+
+    def set(self, name, rex_user, rex_target):
+        ok, err = api.post("/roles", dict( \
+            name = name, rex_user = rex_user, rex_target = rex_target))
+        if not ok:
+            return err
+        return None
+
+    def delete(self, id):
+        ok, _ = api.delete("/roles", dict(id = id))
+        return ok

@@ -727,6 +727,93 @@ func targetDelete(w http.ResponseWriter, r *http.Request) {
 	TargetDeleteSuccessful.Write(w)
 }
 
+func roleList(w http.ResponseWriter, r *http.Request) {
+	skip := 0
+	limit := 0
+
+	if err := r.ParseForm(); err != nil {
+		BadRequest.Description = err.Error()
+		BadRequest.Write(w)
+		return
+	}
+
+	if vals, ok := r.Form["skip"]; ok {
+		if i, err := strconv.ParseInt(vals[0], 10, 64); err == nil {
+			skip = int(i)
+		}
+	}
+	if vals, ok := r.Form["limit"]; ok {
+		if i, err := strconv.ParseInt(vals[0], 10, 64); err == nil {
+			limit = int(i)
+		}
+	}
+
+	keys, err := globalStore.Scan(BucketRoles, "", skip, limit)
+	if err != nil {
+		RoleListFailed := ErrorResponse{Status: http.StatusForbidden, Code: "err_role_list_failed"}
+		RoleListFailed.Description = err.Error()
+		RoleListFailed.Write(w)
+		return
+	}
+
+	RoleList := Response{Status: http.StatusOK}
+	RoleList.Content = keys
+	RoleList.Write(w)
+}
+
+func roleAdd(w http.ResponseWriter, r *http.Request) {
+	var req Role
+	if err := CheckRequestObject(r, &req); err != nil {
+		BadRequest.Description = err.Error()
+		BadRequest.Write(w)
+		return
+	}
+
+	if err := req.Store(globalStore); err != nil {
+		RoleCreateFailed := ErrorResponse{Status: http.StatusForbidden, Code: "err_role_create_failed"}
+		RoleCreateFailed.Description = err.Error()
+		RoleCreateFailed.Write(w)
+		return
+	}
+
+	log.Printf("audit: %v added role '%s' with user regex '%s' and target regex '%s'\n", context.Get(r, "user"), req.Name, req.UserRegex, req.TargetRegex)
+	RoleCreateSuccessful := Response{Status: http.StatusOK}
+	RoleCreateSuccessful.Write(w)
+}
+
+func roleDelete(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		BadRequest.Description = err.Error()
+		BadRequest.Write(w)
+		return
+	}
+
+	id := ""
+	if vals, ok := r.Form["id"]; ok {
+		id = vals[0]
+	}
+
+	if len(id) == 0 {
+		BadRequest.Description = "no id given"
+		BadRequest.Write(w)
+		return
+	}
+
+	role := &Role{
+		Name: id,
+	}
+	if err := role.Delete(globalStore); err != nil {
+		RoleDeleteFailed := ErrorResponse{Status: http.StatusForbidden, Code: "err_role_delete_failed"}
+		RoleDeleteFailed.Description = err.Error()
+		RoleDeleteFailed.Write(w)
+		return
+	}
+
+	log.Printf("audit: %v removed role '%s'\n", context.Get(r, "user"), id)
+	RoleDeleteSuccessful := Response{Status: http.StatusOK}
+	RoleDeleteSuccessful.Write(w)
+}
+
 func StartAPIServer(root string, store *Store) {
 	globalStore = store
 	go func() {
@@ -758,6 +845,10 @@ func StartAPIServer(root string, store *Store) {
 		api.Path("/targets").Methods("GET").HandlerFunc(StackMiddleware(targetList, LoginRequired))
 		api.Path("/targets").Methods("POST").HandlerFunc(StackMiddleware(targetAdd, LoginRequired))
 		api.Path("/targets").Methods("DELETE").HandlerFunc(StackMiddleware(targetDelete, LoginRequired))
+
+		api.Path("/roles").Methods("GET").HandlerFunc(StackMiddleware(roleList, LoginRequired))
+		api.Path("/roles").Methods("POST").HandlerFunc(StackMiddleware(roleAdd, LoginRequired))
+		api.Path("/roles").Methods("DELETE").HandlerFunc(StackMiddleware(roleDelete, LoginRequired))
 
 		logger := &logger{log.New(os.Stdout, "", 0)}
 		n := negroni.New(negroni.NewRecovery(), logger)
