@@ -113,6 +113,9 @@ func NewStore(filename string) (*Store, error) {
 	if err := store.Create(BucketUsers); err != nil {
 		return nil, err
 	}
+	if err := store.Create(BucketRoles); err != nil {
+		return nil, err
+	}
 
 	return store, nil
 }

@@ -41,7 +41,7 @@ func InitRoleManager(store *Store) {
 
 	for _, r := range vals {
 		var role Role
-		if err := json.Unmarshal([]byte(r.Value), role); err != nil {
+		if err := json.Unmarshal([]byte(r.Value), &role); err != nil {
 			log.Printf("role_manager: unable to parse role '%s': %s\n", r.Key, err.Error())
 			continue
 		}
@@ -76,6 +76,12 @@ func AddRole(role *Role) error {
 	return nil
 }
 
+func DeleteRole(role *Role) error {
+	log.Printf("role_manager: removed role '%s'\n", role.Name)
+	delete(manager.roles, role.Name)
+	return nil
+}
+
 func CheckRole(user, target string) (bool, string) {
 	manager.mutex.Lock()
 	defer manager.mutex.Unlock()
@@ -99,9 +105,16 @@ func (r *Role) Store(store *Store) error {
 		return err
 	}
 
+	if err := AddRole(r); err != nil {
+		return err
+	}
+
 	return store.Set(BucketRoles, r.Name, string(jdata))
 }
 
 func (r *Role) Delete(store *Store) error {
+	if err := DeleteRole(r); err != nil {
+		return err
+	}
 	return store.Delete(BucketRoles, r.Name)
 }
