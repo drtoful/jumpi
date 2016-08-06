@@ -52,6 +52,7 @@ var (
 	BucketTargets     = []string{"targets"}
 	BucketSessions    = []string{"sessions"}
 	BucketUsers       = []string{"users"}
+	BucketRoles       = []string{"roles"}
 
 	ErrNoBucketGiven = errors.New("no bucket specified")
 	ErrLocked        = errors.New("store is locked")
@@ -164,7 +165,7 @@ func (store *Store) Scan(bucket []string, q string, skip, limit int) ([]*keyvalu
 			if n < skip {
 				continue
 			}
-			if n == skip+limit {
+			if n == skip+limit && limit > 0 {
 				break
 			}
 			if len(k) == 0 {
