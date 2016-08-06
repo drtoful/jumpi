@@ -79,6 +79,7 @@ func (server *server) handle(conn net.Conn) {
 
 	perm := sshConn.Permissions
 	session := perm.Extensions["session"]
+	user := perm.Extensions["user"]
 	log.Printf("ssh[%s]: new connection from %s\n", session, conn.RemoteAddr().String())
 	defer log.Printf("ssh[%s]: session ended \n", session)
 
@@ -87,6 +88,13 @@ func (server *server) handle(conn net.Conn) {
 		log.Printf("ssh[%s]: error: no channel found\n", session)
 		return
 	}
+
+	ok, role := CheckRole(user, sshConn.User())
+	if !ok {
+		log.Printf("ssh[%s]: permission denied to access '%s'\n", session, sshConn.User())
+		return
+	}
+	log.Printf("ssh[%s]: user allowed to access target by role '%s'\n", session, role)
 
 	var target *Target
 	if newChannel.ChannelType() == "session" {
