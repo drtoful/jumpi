@@ -2,7 +2,9 @@ package jumpi
 
 import (
 	"crypto/rand"
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"errors"
 	"io"
 	"log"
@@ -475,10 +477,34 @@ func secretSet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	secret := &Secret{
-		ID:     req.ID,
-		Type:   TypeSecret(req.Type),
-		Secret: req.Data,
+		ID: req.ID,
 	}
+	switch TypeSecret(req.Type) {
+	case Password:
+		secret.Secret = req.Data
+	case PKey:
+		block, _ := pem.Decode([]byte(req.Data))
+		if block == nil || block.Type != "RSA PRIVATE KEY" {
+			SecretStoreFailed := ErrorResponse{Status: http.StatusForbidden, Code: "err_secret_store_failed"}
+			SecretStoreFailed.Description = "Unable to parse private key PEM"
+			SecretStoreFailed.Write(w)
+			return
+		}
+		pkey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+		if err != nil {
+			SecretStoreFailed := ErrorResponse{Status: http.StatusForbidden, Code: "err_secret_store_failed"}
+			SecretStoreFailed.Description = err.Error()
+			SecretStoreFailed.Write(w)
+			return
+		}
+		secret.Secret = pkey
+	default:
+		SecretStoreFailed := ErrorResponse{Status: http.StatusForbidden, Code: "err_secret_store_failed"}
+		SecretStoreFailed.Description = "Unsupported secret type"
+		SecretStoreFailed.Write(w)
+		return
+	}
+
 	if err := secret.Store(globalStore); err != nil {
 		SecretStoreFailed := ErrorResponse{Status: http.StatusForbidden, Code: "err_secret_store_failed"}
 		SecretStoreFailed.Description = err.Error()

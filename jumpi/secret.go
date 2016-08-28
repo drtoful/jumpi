@@ -140,8 +140,10 @@ func (secret *Secret) Store(store *Store) error {
 	switch s := secret.Secret.(type) {
 	case string:
 		data = []byte(s)
+		secret.Type = Password
 	case *rsa.PrivateKey:
 		data = x509.MarshalPKCS1PrivateKey(s)
+		secret.Type = PKey
 	default:
 		return ErrUnknownSecretType
 	}
