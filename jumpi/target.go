@@ -56,7 +56,26 @@ func (target *Target) LoadSecret(store *Store) error {
 }
 
 func (target *Target) authPK() ([]ssh.Signer, error) {
-	return nil, nil
+	if target.Secret == nil {
+		return nil, ErrNoSecret
+	}
+
+	if target.Secret.Type != PKey {
+		return nil, nil
+	}
+
+	if target.Secret.Secret == nil {
+		if err := target.Secret.Load(target.store); err != nil {
+			return nil, err
+		}
+	}
+
+	signer, err := ssh.NewSignerFromKey(target.Secret.Secret)
+	if err != nil {
+		return nil, err
+	}
+
+	return []ssh.Signer{signer}, nil
 }
 
 func (target *Target) authPassword() (string, error) {
