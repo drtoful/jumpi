@@ -106,10 +106,24 @@ func (server *server) handle(conn net.Conn) {
 		return
 	}
 
+	target.Cast = &Cast{Session: session}
+	if err := target.Cast.Start(); err != nil {
+		log.Printf("ssh[%s]: error: %s\n", session, err.Error())
+		return
+	}
+	log.Printf("ssh[%s]: starting recording of session\n", session)
+
 	log.Printf("ssh[%s]: connecting to %s\n", session, target.ID())
 	if err := target.Connect(newChannel, chans); err != nil {
 		log.Printf("ssh[%s]: error: %s\n", session, err.Error())
 	}
+
+	// stop recording and store
+	target.Cast.Stop()
+	if err := target.Cast.Store(server.store); err != nil {
+		log.Printf("ssh[%s]: error: %s\n", session, err.Error())
+	}
+	log.Printf("ssh[%s]: session saved to store\n", session)
 }
 
 func (server *server) serve() error {

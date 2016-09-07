@@ -53,6 +53,7 @@ var (
 	BucketSessions    = []string{"sessions"}
 	BucketUsers       = []string{"users"}
 	BucketRoles       = []string{"roles"}
+	BucketCasts       = []string{"casts"}
 
 	ErrNoBucketGiven = errors.New("no bucket specified")
 	ErrLocked        = errors.New("store is locked")
@@ -114,6 +115,9 @@ func NewStore(filename string) (*Store, error) {
 		return nil, err
 	}
 	if err := store.Create(BucketRoles); err != nil {
+		return nil, err
+	}
+	if err := store.Create(BucketCasts); err != nil {
 		return nil, err
 	}
 

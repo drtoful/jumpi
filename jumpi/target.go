@@ -14,6 +14,7 @@ type Target struct {
 	Hostname string
 	Port     int
 	Secret   *Secret
+	Cast     *Cast
 
 	store *Store
 }
@@ -101,7 +102,7 @@ func (target *Target) authPassword() (string, error) {
 	return password, nil
 }
 
-func proxy(reqs1, reqs2 <-chan *ssh.Request, channel1, channel2 ssh.Channel) {
+func (target *Target) proxy(reqs1, reqs2 <-chan *ssh.Request, channel1, channel2 ssh.Channel) {
 	var closer sync.Once
 	closerChan := make(chan bool, 1)
 
@@ -112,7 +113,7 @@ func proxy(reqs1, reqs2 <-chan *ssh.Request, channel1, channel2 ssh.Channel) {
 	defer closer.Do(closeFunc)
 
 	go func() {
-		io.Copy(channel1, channel2)
+		target.Cast.Copy(channel1, channel2)
 		closerChan <- true
 	}()
 
@@ -191,7 +192,7 @@ func (target *Target) Connect(newChannel ssh.NewChannel, chans <-chan ssh.NewCha
 				channel2.Close()
 				continue
 			}
-			go proxy(reqs, reqs2, channel, channel2)
+			go target.proxy(reqs, reqs2, channel, channel2)
 		}
 	}()
 
@@ -200,6 +201,6 @@ func (target *Target) Connect(newChannel ssh.NewChannel, chans <-chan ssh.NewCha
 		return err
 	}
 
-	proxy(sessReqs, reqs2, sessChannel, channel2)
+	target.proxy(sessReqs, reqs2, sessChannel, channel2)
 	return nil
 }
