@@ -12,6 +12,8 @@
         <![endif]-->
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css" />
         <base href="/" />
+
+        {% block header %}{% endblock %}
     </head>
     <body>
         <script src="{{ url_for('static', filename="js/jquery.min.js") }}"></script>
