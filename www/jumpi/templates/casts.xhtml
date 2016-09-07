@@ -1,10 +1,12 @@
 {% extends "base.xhtml" %}
 
 {% block content %}
+<h3><span class="fa fa-play"></span> Recording "{{ id }}"</h3>
+
 <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename="css/asciinema-player.css") }}" />
 <script src="{{ url_for('static', filename="js/asciinema-player.js") }}"></script>
 <div id="player-container"></div>
 <script>
-	asciinema.player.js.CreatePlayer("player-container", "{{ url_for('ui.cast_json', id=id) }}");
+    asciinema.player.js.CreatePlayer("player-container", "{{ url_for('ui.cast_json', id=id) }}");
 </script>
 {% endblock %}
