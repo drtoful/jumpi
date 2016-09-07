@@ -4,6 +4,7 @@ import functools
 import json
 
 from flask import Blueprint, redirect, url_for, request, session
+from flask import abort, make_response
 from jumpi.decorators import templated, authenticated
 from jumpi.api import APIAuth, APISecrets, APIStore
 from jumpi.api import APITargets, APIUsers, APIRoles, APICasts
@@ -217,4 +218,11 @@ def cast(id):
 @authenticated
 def cast_json(id):
     api = APICasts()
-    return json.dumps(api.get(id))
+    data = api.get(id)
+    if data is None:
+        abort(404)
+
+    resp = make_response(json.dumps(data), 200)
+    resp.headers['content-type'] = "application/json"
+    return resp
+
