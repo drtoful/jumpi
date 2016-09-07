@@ -1,11 +1,12 @@
 #-*- coding: utf-8 -*-
 
 import functools
+import json
 
 from flask import Blueprint, redirect, url_for, request, session
 from jumpi.decorators import templated, authenticated
 from jumpi.api import APIAuth, APISecrets, APIStore
-from jumpi.api import APITargets, APIUsers, APIRoles
+from jumpi.api import APITargets, APIUsers, APIRoles, APICasts
 
 uibp = Blueprint("ui", __name__)
 get = functools.partial(uibp.route, methods=['GET'])
@@ -205,3 +206,15 @@ def delete_role():
         api = APIRoles()
         api.delete(id)
     return redirect(url_for("ui.roles"))
+
+@get("/casts/<id>")
+@authenticated
+@templated("cast.xhtml")
+def cast(id):
+    return dict(id = id)
+
+@get("/casts/<id>.json")
+@authenticated
+def cast_json(id):
+    api = APICasts()
+    return json.dumps(api.get(id))

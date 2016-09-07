@@ -1,0 +1,10 @@
+{% extends "base.xhtml" %}
+
+{% block content %}
+<link rel="stylesheet" type="text/css" href="/static/css/asciinema-player.css" />
+<script src="/static/js/asciinema-player.js"></script>
+<div id="player-container"></div>
+<script>
+	asciinema.player.js.CreatePlayer("player-container", "{{ url_for('ui.cast_json', id=id) }}");
+</script>
+{% endblock %}

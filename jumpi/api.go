@@ -840,6 +840,50 @@ func roleDelete(w http.ResponseWriter, r *http.Request) {
 	RoleDeleteSuccessful.Write(w)
 }
 
+func castGet(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		BadRequest.Description = err.Error()
+		BadRequest.Write(w)
+		return
+	}
+
+	id := ""
+	if vals, ok := r.Form["id"]; ok {
+		id = vals[0]
+	}
+
+	if len(id) == 0 {
+		BadRequest.Description = "no id given"
+		BadRequest.Write(w)
+		return
+	}
+
+	// raw load
+	data, err := globalStore.Get(BucketCasts, id)
+	if len(data) == 0 || err != nil {
+		NotFound := ErrorResponse{Status: http.StatusNotFound, Code: "err_cast_not_found"}
+		if err == nil {
+			NotFound.Description = "Specified cast was not found"
+		} else {
+			NotFound.Description = err.Error()
+		}
+		NotFound.Write(w)
+		return
+	}
+
+	var cast Cast
+	if err := json.Unmarshal([]byte(data), &cast); err != nil {
+		CastError := ErrorResponse{Status: http.StatusForbidden, Code: "err_cast_load_error"}
+		CastError.Description = err.Error()
+		CastError.Write(w)
+		return
+	}
+
+	CastLoaded := Response{Status: http.StatusOK}
+	CastLoaded.Content = cast
+	CastLoaded.Write(w)
+}
+
 func StartAPIServer(root string, store *Store) {
 	globalStore = store
 	go func() {
@@ -875,6 +919,8 @@ func StartAPIServer(root string, store *Store) {
 		api.Path("/roles").Methods("GET").HandlerFunc(StackMiddleware(roleList, LoginRequired))
 		api.Path("/roles").Methods("POST").HandlerFunc(StackMiddleware(roleAdd, LoginRequired))
 		api.Path("/roles").Methods("DELETE").HandlerFunc(StackMiddleware(roleDelete, LoginRequired))
+
+		api.Path("/casts").Methods("GET").HandlerFunc(StackMiddleware(castGet, LoginRequired))
 
 		logger := &logger{log.New(os.Stdout, "", 0)}
 		n := negroni.New(negroni.NewRecovery(), logger)

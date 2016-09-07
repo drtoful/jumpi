@@ -186,3 +186,10 @@ class APIRoles(object):
     def delete(self, id):
         ok, _ = api.delete("/roles", dict(id = id))
         return ok
+
+class APICasts(object):
+    def get(self, id):
+        ok, data = api.get("/casts", dict(id = id))
+        if not ok:
+            return None
+        return data
