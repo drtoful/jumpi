@@ -209,7 +209,7 @@ def delete_role():
 
 @get("/casts/<id>")
 @authenticated
-@templated("cast.xhtml")
+@templated("casts.xhtml")
 def cast(id):
     return dict(id = id)
 
