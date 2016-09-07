@@ -208,11 +208,14 @@ def delete_role():
         api.delete(id)
     return redirect(url_for("ui.roles"))
 
-@get("/casts/<id>")
+@get("/casts")
 @authenticated
 @templated("casts.xhtml")
-def cast(id):
-    return dict(id = id)
+def cast():
+    id = request.args.get("id", None)
+    if not id is None and len(id) > 0:
+        return dict(id = id)
+    return redirect(url_for("ui.index"))
 
 @get("/casts/<id>.json")
 @authenticated
