@@ -904,23 +904,23 @@ func StartAPIServer(root string, store *Store) {
 		api.Path("/store/lock").Methods("POST").HandlerFunc(StackMiddleware(storeLock, LoginRequired))
 		api.Path("/store/status").Methods("GET").HandlerFunc(StackMiddleware(storeStatus, LoginRequired))
 
-		api.Path("/secrets").Methods("GET").HandlerFunc(StackMiddleware(secretList, LoginRequired))
+		api.Path("/secrets").Methods("GET").HandlerFunc(StackMiddleware(secretList, StoreUnlockRequired, LoginRequired))
 		api.Path("/secrets").Methods("POST").HandlerFunc(StackMiddleware(secretSet, StoreUnlockRequired, LoginRequired))
 		api.Path("/secrets").Methods("DELETE").HandlerFunc(StackMiddleware(secretDelete, LoginRequired))
 
-		api.Path("/users").Methods("GET").HandlerFunc(StackMiddleware(userList, LoginRequired))
-		api.Path("/users").Methods("POST").HandlerFunc(StackMiddleware(userAdd, LoginRequired))
+		api.Path("/users").Methods("GET").HandlerFunc(StackMiddleware(userList, StoreUnlockRequired, LoginRequired))
+		api.Path("/users").Methods("POST").HandlerFunc(StackMiddleware(userAdd, StoreUnlockRequired, LoginRequired))
 		api.Path("/users").Methods("DELETE").HandlerFunc(StackMiddleware(userDelete, LoginRequired))
 
-		api.Path("/targets").Methods("GET").HandlerFunc(StackMiddleware(targetList, LoginRequired))
-		api.Path("/targets").Methods("POST").HandlerFunc(StackMiddleware(targetAdd, LoginRequired))
+		api.Path("/targets").Methods("GET").HandlerFunc(StackMiddleware(targetList, StoreUnlockRequired, LoginRequired))
+		api.Path("/targets").Methods("POST").HandlerFunc(StackMiddleware(targetAdd, StoreUnlockRequired, LoginRequired))
 		api.Path("/targets").Methods("DELETE").HandlerFunc(StackMiddleware(targetDelete, LoginRequired))
 
-		api.Path("/roles").Methods("GET").HandlerFunc(StackMiddleware(roleList, LoginRequired))
-		api.Path("/roles").Methods("POST").HandlerFunc(StackMiddleware(roleAdd, LoginRequired))
+		api.Path("/roles").Methods("GET").HandlerFunc(StackMiddleware(roleList, StoreUnlockRequired, LoginRequired))
+		api.Path("/roles").Methods("POST").HandlerFunc(StackMiddleware(roleAdd, StoreUnlockRequired, LoginRequired))
 		api.Path("/roles").Methods("DELETE").HandlerFunc(StackMiddleware(roleDelete, LoginRequired))
 
-		api.Path("/casts").Methods("GET").HandlerFunc(StackMiddleware(castGet, LoginRequired))
+		api.Path("/casts").Methods("GET").HandlerFunc(StackMiddleware(castGet, StoreUnlockRequired, LoginRequired))
 
 		logger := &logger{log.New(os.Stdout, "", 0)}
 		n := negroni.New(negroni.NewRecovery(), logger)
