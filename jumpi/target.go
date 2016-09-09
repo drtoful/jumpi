@@ -31,7 +31,7 @@ func (target *Target) Store(store *Store) error {
 	if target.Secret == nil {
 		return ErrNoSecret
 	}
-	return store.Set(BucketTargets, target.ID(), target.Secret.ID)
+	return store.Set(BucketTargets, target.ID(), []byte(target.Secret.ID))
 }
 
 func (target *Target) LoadSecret(store *Store) error {
@@ -48,7 +48,7 @@ func (target *Target) LoadSecret(store *Store) error {
 		return ErrNoSecret
 	}
 
-	target.Secret = &Secret{ID: secret}
+	target.Secret = &Secret{ID: string(secret)}
 	if err := target.Secret.Load(store); err != nil {
 		return err
 	}

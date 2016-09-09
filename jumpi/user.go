@@ -40,7 +40,7 @@ func UserFromPublicKey(name string, publickey string) (*User, error) {
 }
 
 func (user *User) Store(store *Store) error {
-	return store.Set(BucketUsers, user.KeyFingerprint, user.Name)
+	return store.Set(BucketUsers, user.KeyFingerprint, []byte(user.Name))
 }
 
 func (user *User) Load(store *Store) error {
@@ -53,7 +53,7 @@ func (user *User) Load(store *Store) error {
 		return ErrUnknownUser
 	}
 
-	user.Name = name
+	user.Name = string(name)
 	return nil
 }
 

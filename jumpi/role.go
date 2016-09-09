@@ -1,6 +1,7 @@
 package jumpi
 
 import (
+	"crypto/rand"
 	"encoding/json"
 	"log"
 	"regexp"
@@ -104,12 +105,15 @@ func (r *Role) Store(store *Store) error {
 	if err != nil {
 		return err
 	}
+	defer func() {
+		rand.Read(jdata)
+	}()
 
 	if err := AddRole(r); err != nil {
 		return err
 	}
 
-	return store.Set(BucketRoles, r.Name, string(jdata))
+	return store.Set(BucketRoles, r.Name, jdata)
 }
 
 func (r *Role) Delete(store *Store) error {

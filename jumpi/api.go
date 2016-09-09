@@ -21,7 +21,6 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
-	"golang.org/x/crypto/bcrypt"
 )
 
 var (
@@ -79,7 +78,7 @@ func (session *session) Login() (string, error) {
 	}
 
 	// store this session into session store for that user
-	if err := session.store.Set(BucketSessions, "user~"+username, result); err != nil {
+	if err := session.store.SetRaw(BucketSessions, "user~"+username, []byte(result)); err != nil {
 		return "", err
 	}
 
@@ -113,8 +112,8 @@ func (session *session) Validate(rawToken string) (bool, *jwt.Token) {
 
 		// token is valid if JWT is valid and the stored session for this
 		// user is the same as the JWT
-		tkn, _ := session.store.Get(BucketSessions, "user~"+username)
-		if tkn != rawToken {
+		tkn, _ := session.store.GetRaw(BucketSessions, "user~"+username)
+		if string(tkn) != rawToken {
 			return false, nil
 		}
 
@@ -220,7 +219,7 @@ func ContextMiddleware(handler http.Handler) http.HandlerFunc {
 			for _, t := range tokens {
 				// separate from first space, we want a Bearer token
 				splits := strings.Split(t, " ")
-				if len(splits) < 2 && splits[0] != "Bearer" {
+				if len(splits) < 2 || splits[0] != "Bearer" {
 					continue
 				}
 
@@ -307,13 +306,7 @@ func StoreUnlockRequired(handler http.Handler) http.HandlerFunc {
 }
 
 func validate(username, password string) error {
-	hash, err := globalStore.Get(BucketMetaAdmins, username)
-	if err != nil {
-		return errors.New("invalid username/password")
-	}
-
-	err = bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-	if err != nil {
+	if ok := globalStore.Auth(username, []byte(password)); !ok {
 		return errors.New("invalid username/password")
 	}
 
@@ -342,8 +335,15 @@ func authLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	session := &session{user: cred.Username, store: globalStore}
+	bearer, err := session.Login()
+	if err != nil {
+		AuthLoginFailed := ErrorResponse{Status: http.StatusForbidden, Code: "err_login_failed"}
+		AuthLoginFailed.Description = err.Error()
+		AuthLoginFailed.Write(w)
+		return
+	}
 	AuthLoginSuccessful := Response{Status: http.StatusOK}
-	AuthLoginSuccessful.Content, _ = session.Login()
+	AuthLoginSuccessful.Content = bearer
 	AuthLoginSuccessful.Write(w)
 }
 
@@ -397,7 +397,7 @@ func storeUnlock(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := globalStore.Unlock(pwd.Password); err != nil {
+	if err := globalStore.Unlock([]byte(pwd.Password)); err != nil {
 		UnlockFailed := ErrorResponse{Status: http.StatusForbidden, Code: "err_unlock_failed"}
 		UnlockFailed.Description = err.Error()
 		UnlockFailed.Write(w)

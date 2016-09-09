@@ -5,5 +5,3 @@ List of various todos before jumpi is considered stable:
 - handle keys with care
   * secret keys are somewhat lingering in memory, since they are cast
     to string to []byte and back, which is uneccessary
-  * maybe encrypt complete database
-- encrypt casts

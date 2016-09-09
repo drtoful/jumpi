@@ -12,6 +12,7 @@ import (
 	"os"
 
 	"github.com/boltdb/bolt"
+	"github.com/codahale/chacha20"
 	"github.com/drtoful/jumpi/utils"
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/crypto/pbkdf2"
@@ -44,20 +45,36 @@ type keyvalue struct {
 	Value string `json:"value"`
 }
 
-var (
-	BucketMeta        = []string{"meta"}
-	BucketMetaAdmins  = []string{"meta", "admins"}
-	BucketSecrets     = []string{"secrets"}
-	BucketSecretsKeys = []string{"secrets", "keys"}
-	BucketTargets     = []string{"targets"}
-	BucketSessions    = []string{"sessions"}
-	BucketUsers       = []string{"users"}
-	BucketRoles       = []string{"roles"}
-	BucketCasts       = []string{"casts"}
+type recordKey struct {
+	Rounds int    `json:"rounds"`
+	Nonce  string `json:"nonce"`
+	Data   string `json:"data"`
+}
 
-	ErrNoBucketGiven = errors.New("no bucket specified")
-	ErrLocked        = errors.New("store is locked")
-	ErrUnknownHash   = errors.New("unknown hash algorithm for key derivation")
+type record struct {
+	Key    recordKey `json:"key"`
+	Type   string    `json:"type"`
+	Rounds int       `json:"rounds"`
+	Nonce  string    `json:"nonce"`
+	Data   string    `json:"data"`
+}
+
+var (
+	BucketMeta       = []string{"meta"}
+	BucketMetaAdmins = []string{"meta", "admins"}
+	BucketSecrets    = []string{"secrets"}
+	BucketTargets    = []string{"targets"}
+	BucketSessions   = []string{"sessions"}
+	BucketUsers      = []string{"users"}
+	BucketRoles      = []string{"roles"}
+	BucketCasts      = []string{"casts"}
+
+	ErrNoBucketGiven     = errors.New("no bucket specified")
+	ErrLocked            = errors.New("store is locked")
+	ErrUnknownHash       = errors.New("unknown hash algorithm for key derivation")
+	ErrUnsupportedCipher = errors.New("unknown cipher for store")
+
+	DefaultRounds int = 20
 )
 
 func traverseBuckets(bucket []string, tx *bolt.Tx) (*bolt.Bucket, error) {
@@ -102,9 +119,6 @@ func NewStore(filename string) (*Store, error) {
 	if err := store.Create(BucketSecrets); err != nil {
 		return nil, err
 	}
-	if err := store.Create(BucketSecretsKeys); err != nil {
-		return nil, err
-	}
 	if err := store.Create(BucketTargets); err != nil {
 		return nil, err
 	}
@@ -128,32 +142,155 @@ func (store *Store) Close() {
 	store.db.Close()
 }
 
-func (store *Store) Set(bucket []string, key, value string) error {
+func (store *Store) encrypt(data []byte) ([]byte, error) {
+	if store.locked {
+		return nil, ErrLocked
+	}
+
+	key := make([]byte, 32)
+	if _, err := rand.Read(key); err != nil {
+		return nil, err
+	}
+	defer func() {
+		rand.Read(key)
+	}()
+
+	nonceKey := make([]byte, 8)
+	if _, err := rand.Read(nonceKey); err != nil {
+		return nil, err
+	}
+
+	nonceData := make([]byte, 8)
+	if _, err := rand.Read(nonceData); err != nil {
+		return nil, err
+	}
+
+	stream, err := chacha20.NewWithRounds(key, nonceData, uint8(DefaultRounds))
+	if err != nil {
+		return nil, err
+	}
+	stream.XORKeyStream(data, data)
+
+	stream, err = chacha20.NewWithRounds(store.password, nonceKey, uint8(DefaultRounds))
+	if err != nil {
+		return nil, err
+	}
+	stream.XORKeyStream(key, key)
+
+	rkey := recordKey{
+		Rounds: DefaultRounds,
+		Nonce:  utils.Hexlify(nonceKey),
+		Data:   utils.Hexlify(key),
+	}
+	r := &record{
+		Key:    rkey,
+		Type:   "chacha20",
+		Rounds: DefaultRounds,
+		Nonce:  utils.Hexlify(nonceData),
+		Data:   utils.Hexlify(data),
+	}
+
+	return json.Marshal(r)
+}
+
+func (store *Store) decrypt(data []byte) ([]byte, error) {
+	if store.locked {
+		return nil, ErrLocked
+	}
+
+	var r record
+	if err := json.Unmarshal(data, &r); err != nil {
+		return nil, err
+	}
+
+	// currently only chacha20 encryption is supported
+	if r.Type != "chacha20" {
+		return nil, ErrUnsupportedCipher
+	}
+
+	nonce, err := utils.UnHexlify(r.Key.Nonce)
+	if err != nil {
+		return nil, err
+	}
+
+	key, err := utils.UnHexlify(r.Key.Data)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		rand.Read(key)
+	}()
+
+	stream, err := chacha20.NewWithRounds(store.password, nonce, uint8(r.Key.Rounds))
+	if err != nil {
+		return nil, err
+	}
+	stream.XORKeyStream(key, key)
+
+	nonce, err = utils.UnHexlify(r.Nonce)
+	if err != nil {
+		return nil, err
+	}
+
+	rdata, err := utils.UnHexlify(r.Data)
+	if err != nil {
+		return nil, err
+	}
+
+	stream, err = chacha20.NewWithRounds(key, nonce, uint8(r.Rounds))
+	if err != nil {
+		return nil, err
+	}
+	stream.XORKeyStream(rdata, rdata)
+	return rdata, nil
+}
+
+func (store *Store) SetRaw(bucket []string, key string, value []byte) error {
 	err := store.db.Update(func(tx *bolt.Tx) error {
 		b, err := traverseBuckets(bucket, tx)
 		if err != nil {
-			return nil
+			return err
 		}
 
-		err = b.Put([]byte(key), []byte(value))
-		return err
+		return b.Put([]byte(key), value)
 	})
 	return err
 }
 
-func (store *Store) Get(bucket []string, key string) (string, error) {
-	var value string
+func (store *Store) Set(bucket []string, key string, value []byte) error {
+	data, err := store.encrypt(value)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		rand.Read(data)
+	}()
+
+	return store.SetRaw(bucket, key, data)
+}
+
+func (store *Store) GetRaw(bucket []string, key string) ([]byte, error) {
+	var value []byte
 	err := store.db.View(func(tx *bolt.Tx) error {
 		b, err := traverseBuckets(bucket, tx)
 		if err != nil {
-			return nil
+			return err
 		}
 
-		value = string(b.Get([]byte(key)))
+		value = b.Get([]byte(key))
 		return nil
 	})
 
 	return value, err
+}
+
+func (store *Store) Get(bucket []string, key string) ([]byte, error) {
+	data, err := store.GetRaw(bucket, key)
+	if err != nil {
+		return nil, err
+	}
+
+	return store.decrypt(data)
 }
 
 func (store *Store) Scan(bucket []string, q string, skip, limit int) ([]*keyvalue, error) {
@@ -235,14 +372,6 @@ func (store *Store) Create(bucket []string) error {
 	return err
 }
 
-func (store *Store) Password() ([]byte, error) {
-	if store.locked {
-		return nil, ErrLocked
-	}
-
-	return store.password, nil
-}
-
 func (store *Store) IsLocked() bool {
 	return store.locked
 }
@@ -255,8 +384,8 @@ func (store *Store) Lock() error {
 	return nil
 }
 
-func (store *Store) Unlock(password string) error {
-	data, err := store.Get(BucketMeta, "keyderivation")
+func (store *Store) Unlock(password []byte) error {
+	data, err := store.GetRaw(BucketMeta, "keyderivation")
 	meta := &metaKeyDerivation{}
 	if err != nil {
 		return err
@@ -269,31 +398,42 @@ func (store *Store) Unlock(password string) error {
 			return err
 		}
 
-		challenge, err := bcrypt.GenerateFromPassword([]byte(password), 12)
+		challenge, err := bcrypt.GenerateFromPassword(password, 12)
 		if err != nil {
 			return err
 		}
+		defer func() {
+			rand.Read(challenge)
+		}()
 
 		meta = &metaKeyDerivation{
 			Salt:       utils.Hexlify(salt),
 			Iterations: DerivationIterations,
 			Type:       HashSHA256,
-			Challenge:  string(challenge),
+			Challenge:  utils.Hexlify(challenge),
 		}
 		jdata, err := json.Marshal(meta)
 		if err != nil {
 			return err
 		}
-		err = store.Set(BucketMeta, "keyderivation", string(jdata))
+
+		err = store.SetRaw(BucketMeta, "keyderivation", jdata)
 		if err != nil {
 			return err
 		}
 	} else {
-		if err := json.Unmarshal([]byte(data), meta); err != nil {
+		if err := json.Unmarshal(data, meta); err != nil {
 			return err
 		}
+		challenge, err := utils.UnHexlify(meta.Challenge)
+		if err != nil {
+			return err
+		}
+		defer func() {
+			rand.Read(challenge)
+		}()
 
-		if err := bcrypt.CompareHashAndPassword([]byte(meta.Challenge), []byte(password)); err != nil {
+		if err := bcrypt.CompareHashAndPassword(challenge, password); err != nil {
 			return err
 		}
 	}
@@ -310,32 +450,51 @@ func (store *Store) Unlock(password string) error {
 	default:
 		return ErrUnknownHash
 	}
-	store.password = pbkdf2.Key([]byte(password), salt, meta.Iterations, 32, digest)
+	store.password = pbkdf2.Key(password, salt, meta.Iterations, 32, digest)
+	defer func() {
+		rand.Read(password)
+	}()
 	store.locked = false
 
 	return nil
 }
 
-func readPwd(msg string) (string, error) {
+func readPwd(msg string) ([]byte, error) {
 	fmt.Printf(msg)
 	pwd1, err := terminal.ReadPassword(int(os.Stdin.Fd()))
 	fmt.Println()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	fmt.Printf("Repeat: ")
 	pwd2, err := terminal.ReadPassword(int(os.Stdin.Fd()))
 	fmt.Println()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	if bytes.Compare(pwd1, pwd2) != 0 {
-		return "", errors.New("inavlid repeated password")
+		return nil, errors.New("inavlid repeated password")
 	}
 
-	return string(pwd1), nil
+	return pwd1, nil
+}
+
+func (store *Store) Auth(username string, password []byte) bool {
+	hash, err := store.GetRaw(BucketMetaAdmins, username)
+	if err != nil {
+		return false
+	}
+	defer func() {
+		rand.Read(password)
+	}()
+
+	err = bcrypt.CompareHashAndPassword(hash, password)
+	if err != nil {
+		return false
+	}
+	return true
 }
 
 func (store *Store) FTR() {
@@ -347,20 +506,29 @@ func (store *Store) FTR() {
 		log.Fatalf("ftr failed: %s\n", err.Error())
 	}
 
-	store.Unlock(pwd)
-	store.Lock()
+	if err := store.Unlock(pwd); err != nil {
+		log.Fatalf("ftr failed: %s\n", err.Error())
+	}
+	defer func() {
+		store.Lock()
+	}()
 
 	// admin password (for ui/api)
 	pwd, err = readPwd("Enter Admin Password: ")
 	if err != nil {
-		log.Fatal("ftr failed: %s\n", err.Error())
+		log.Fatalf("ftr failed: %s\n", err.Error())
 	}
+	defer func() {
+		rand.Read(pwd)
+	}()
 
-	challenge, err := bcrypt.GenerateFromPassword([]byte(pwd), 12)
+	challenge, err := bcrypt.GenerateFromPassword(pwd, 12)
 	if err != nil {
-		log.Fatal("ftr failed: %s\n", err.Error())
+		log.Fatalf("ftr failed: %s\n", err.Error())
 	}
-	store.Set(BucketMetaAdmins, "admin", string(challenge))
+	if err := store.SetRaw(BucketMetaAdmins, "admin", challenge); err != nil {
+		log.Fatalf("ftr failed: %s\n", err.Error())
+	}
 
 	fmt.Println("Setup complete")
 }

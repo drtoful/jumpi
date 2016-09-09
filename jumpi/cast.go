@@ -237,5 +237,8 @@ func (cast *Cast) Store(store *Store) error {
 	if err != nil {
 		return err
 	}
-	return store.Set(BucketCasts, cast.Session, string(jdata))
+	defer func() {
+		rand.Read(jdata)
+	}()
+	return store.Set(BucketCasts, cast.Session, jdata)
 }
