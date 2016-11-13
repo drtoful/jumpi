@@ -13,6 +13,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/codahale/chacha20"
@@ -21,6 +22,8 @@ import (
 
 var (
 	ErrNoSession = errors.New("unable to start cast recording: no session set")
+
+	channelJobs chan string
 )
 
 type castEntry struct {
@@ -34,6 +37,13 @@ type secFile struct {
 	rounds uint8
 	fd     *os.File
 	stream cipher.Stream
+}
+
+type secFileJob struct {
+	Secret string `json:"secret"`
+	Nonce  string `json:"nonce"`
+	Rounds int    `json:"rounds"`
+	File   string `json:"filename"`
 }
 
 type Cast struct {
@@ -79,10 +89,15 @@ func (f *secFile) Reset() error {
 
 func (f *secFile) Close() {
 	f.fd.Close()
+	rand.Read(f.secret)
+	rand.Read(f.nonce)
+}
+
+func (f *secFile) Remove() {
 	os.Remove(f.fd.Name())
 }
 
-func newSecFile() (*secFile, error) {
+func newSecFile(store *Store, session string) (*secFile, error) {
 	tmpfile, err := ioutil.TempFile("", "jumpi")
 	if err != nil {
 		return nil, err
@@ -106,7 +121,61 @@ func newSecFile() (*secFile, error) {
 		return nil, err
 	}
 
-	return file, nil
+	// store job into storage
+	job := &secFileJob{
+		Secret: utils.Hexlify(file.secret),
+		Nonce:  utils.Hexlify(file.nonce),
+		Rounds: int(file.rounds),
+		File:   tmpfile.Name(),
+	}
+	jdata, err := json.Marshal(job)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		rand.Read(jdata)
+	}()
+	err = store.Set(BucketCasts, "job~"+session, jdata)
+	return file, err
+}
+
+func loadJob(id string, store *Store) (*secFile, error) {
+	jdata, err := store.Get(BucketCasts, id)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		rand.Read(jdata)
+	}()
+
+	var job secFileJob
+	if err := json.Unmarshal(jdata, &job); err != nil {
+		return nil, err
+	}
+
+	secret, err := utils.UnHexlify(job.Secret)
+	if err != nil {
+		return nil, err
+	}
+
+	nonce, err := utils.UnHexlify(job.Nonce)
+	if err != nil {
+		return nil, err
+	}
+
+	file, err := os.Open(job.File)
+	if err != nil {
+		return nil, err
+	}
+
+	sfile := &secFile{
+		fd:     file,
+		secret: secret,
+		nonce:  nonce,
+		rounds: uint8(job.Rounds),
+	}
+
+	return sfile, sfile.Reset()
 }
 
 // similar to io.copyBuffer method, but instead of directly writing to
@@ -153,7 +222,7 @@ func (cast *Cast) Copy(dest io.Writer, src io.Reader) (int64, error) {
 	return written, err
 }
 
-func (cast *Cast) Start() error {
+func (cast *Cast) Start(store *Store) error {
 	if len(cast.Session) == 0 {
 		return ErrNoSession
 	}
@@ -163,10 +232,23 @@ func (cast *Cast) Start() error {
 	cast.Width = 80
 	cast.Height = 24
 
-	fd, err := newSecFile()
+	fd, err := newSecFile(store, cast.Session)
 	if err != nil {
 		return err
 	}
+
+	// store meta into database
+	jdata, err := json.Marshal(cast)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		rand.Read(jdata)
+	}()
+	if err := store.Set(BucketCasts, "jobmeta~"+cast.Session, jdata); err != nil {
+		return err
+	}
+
 	cast.file = fd
 	cast.recorder = make(chan *castEntry)
 	log.Printf("ssh[%s]: storing recording into %s\n", cast.Session, cast.file.fd.Name())
@@ -200,6 +282,11 @@ func (cast *Cast) Stop() {
 		return
 	}
 	cast.recorder <- nil
+
+	go func() {
+		// start indexing job
+		channelJobs <- "job~" + cast.Session
+	}()
 }
 
 func (cast *Cast) Store(store *Store) error {
@@ -241,4 +328,85 @@ func (cast *Cast) Store(store *Store) error {
 		rand.Read(jdata)
 	}()
 	return store.Set(BucketCasts, cast.Session, jdata)
+}
+
+func StartIndexerServer(store *Store) error {
+	channelJobs = make(chan string)
+
+	go func() {
+		// we wait for the store to unlock
+		for {
+			if !store.IsLocked() {
+				break
+			}
+			time.Sleep(time.Second)
+		}
+
+		log.Printf("indexer: starting indexing worker\n")
+		for {
+			jobid := <-channelJobs
+			splits := strings.SplitN(jobid, "~", 2)
+			if len(splits) < 2 {
+				continue
+			}
+
+			file, err := loadJob(jobid, store)
+			if err != nil {
+				log.Printf("indexer[%s]: unable to process session (1): %s\n", splits[1], err.Error())
+				continue
+			}
+			defer func() {
+				rand.Read(file.secret)
+			}()
+
+			jdata, err := store.Get(BucketCasts, "jobmeta~"+splits[1])
+			if err != nil {
+				log.Printf("indexer[%s]: unable to process session (2): %s\n", splits[1], err.Error())
+				continue
+			}
+			defer func() {
+				rand.Read(jdata)
+			}()
+
+			var cast Cast
+			if err := json.Unmarshal(jdata, &cast); err != nil {
+				log.Printf("indexer[%s]: unable to process session (3): %s\n", splits[1], err.Error())
+				continue
+			}
+			cast.file = file
+			cast.Session = splits[1]
+
+			log.Printf("indexer[%s]: starting indexing\n", splits[1])
+			if err := cast.Store(store); err != nil {
+				log.Printf("indexer[%s]: unable to process session (4): %s\n", splits[1], err.Error())
+				file.Close()
+				continue
+			}
+
+			file.Close()
+			file.Remove()
+			if err := store.Delete(BucketCasts, jobid); err != nil {
+				log.Printf("indexer[%s]: unable to remove session from jobqueue: %s\n", splits[1], err.Error())
+				continue
+			}
+			log.Printf("indexer[%s]: indexing concluded\n", splits[1])
+
+			store.Delete(BucketCasts, "jobmeta~"+splits[1])
+			store.Delete(BucketCasts, "job~"+splits[1])
+		}
+	}()
+
+	//load existing jobs
+	go func() {
+		kvs, err := store.Scan(BucketCasts, "job~", 0, 0)
+		if err != nil {
+			return
+		}
+
+		log.Printf("indexer: processing unindexed recordings\n")
+		for _, kv := range kvs {
+			channelJobs <- kv.Key
+		}
+	}()
+	return nil
 }
