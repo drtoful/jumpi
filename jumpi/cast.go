@@ -293,6 +293,7 @@ func (cast *Cast) Store(store *Store) error {
 	// move to top of file and reset chacha20 stream
 	cast.file.Reset()
 	cast.Records = make([][]interface{}, 0)
+	cast.Duration = 0
 	defer cast.file.Close()
 
 	// read json objects line by line and add them to the
@@ -317,6 +318,7 @@ func (cast *Cast) Store(store *Store) error {
 			return err
 		}
 		cast.Records = append(cast.Records, []interface{}{entry.Delay, string(data)})
+		cast.Duration += entry.Delay
 	}
 
 	// store into database
