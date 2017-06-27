@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"errors"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -18,9 +19,13 @@ var (
 	signingKey    = []byte{}
 
 	v1routes = Routes{
-		Route{Name: "AuthLogin", Method: "POST", Pattern: "/auth/login", HandlerFunc: authLogin},
-		Route{Name: "AuthLogout", Method: "GET", Pattern: "/auth/logout", HandlerFunc: StackMiddleware(authLogout, LoginRequired)},
-		Route{Name: "AuthVal", Method: "GET", Pattern: "/auth/validate", HandlerFunc: authValidate},
+		Route{Method: "POST", Pattern: "/auth/login", HandlerFunc: authLogin},
+		Route{Method: "GET", Pattern: "/auth/logout", HandlerFunc: StackMiddleware(authLogout, LoginRequired)},
+		Route{Method: "GET", Pattern: "/auth/validate", HandlerFunc: authValidate},
+
+		Route{Method: "POST", Pattern: "/store/unlock", HandlerFunc: StackMiddleware(storeUnlock, LoginRequired)},
+		Route{Method: "POST", Pattern: "/store/lock", HandlerFunc: StackMiddleware(storeLock, LoginRequired)},
+		Route{Method: "GET", Pattern: "/store/status", HandlerFunc: StackMiddleware(storeStatus, LoginRequired)},
 	}
 )
 
@@ -200,6 +205,80 @@ func authValidate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ResponseError(w, http.StatusForbidden, errors.New("Invalid Authorization Token"))
+}
+
+/******************************************
+ * STORE
+ ******************************************/
+func storeUnlock(w http.ResponseWriter, r *http.Request) {
+	type _request struct {
+		Password string `json:"password"`
+	}
+	var request _request
+
+	jreq, err := ParseJsonRequest(r, &request)
+	if err != nil {
+		ResponseError(w, 422, err)
+		return
+	}
+
+	if err := jreq.Validate(); err != nil {
+		ResponseError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	store, err := GetStore(r)
+	if err != nil {
+		ResponseError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if err := store.Unlock([]byte(request.Password)); err != nil {
+		ResponseError(w, http.StatusForbidden, err)
+		return
+	}
+
+	log.Printf("audit: %v unlocked store successfully\n", context.Get(r, "user"))
+	response := JSONResponse{
+		Status: http.StatusOK,
+	}
+	response.Write(w)
+}
+
+func storeLock(w http.ResponseWriter, r *http.Request) {
+	store, err := GetStore(r)
+	if err != nil {
+		ResponseError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if err := store.Lock(); err != nil {
+		ResponseError(w, http.StatusForbidden, err)
+		return
+	}
+
+	log.Printf("audit: %v locked store successfully\n", context.Get(r, "user"))
+	response := JSONResponse{
+		Status: http.StatusOK,
+	}
+	response.Write(w)
+}
+
+func storeStatus(w http.ResponseWriter, r *http.Request) {
+	store, err := GetStore(r)
+	if err != nil {
+		ResponseError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	c := make(map[string]interface{})
+	c["locked"] = store.IsLocked()
+
+	response := JSONResponse{
+		Status:  http.StatusOK,
+		Content: c,
+	}
+	response.Write(w)
 }
 
 // Main Router
