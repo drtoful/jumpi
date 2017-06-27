@@ -15,12 +15,9 @@ import (
 	"time"
 
 	"github.com/codegangsta/negroni"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
-)
-
-var (
-	globalStore *Store
 )
 
 type Route struct {
@@ -58,7 +55,9 @@ func (l *logger) ServeHTTP(w http.ResponseWriter, r *http.Request, next http.Han
 
 	session := "-"
 	if ses := context.Get(r, "session"); ses != nil {
-		session = ses.(string)
+		token := ses.(*jwt.Token)
+		parts := strings.Split(token.Raw, ".")
+		session = parts[2]
 	}
 
 	user := "-"
@@ -99,10 +98,8 @@ type JSONRequest struct {
 
 type JSONResponse struct {
 	Status  int         `json:"status"`
-	Content interface{} `json:"response"`
+	Content interface{} `json:"response,omitempty"`
 }
-
-type JSONResponseError JSONResponse
 
 var (
 	LimitRequest int64 = 4096
@@ -177,10 +174,12 @@ func (jr JSONResponse) Write(w http.ResponseWriter) error {
 }
 
 func ResponseError(w http.ResponseWriter, status int, e error) {
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.WriteHeader(status)
+	response := JSONResponse{
+		Status:  status,
+		Content: e.Error(),
+	}
 
-	if err := json.NewEncoder(w).Encode(e.Error()); err != nil {
+	if err := response.Write(w); err != nil {
 		log.Fatalf("api_server: unable to send error response: %s\n", err.Error())
 	}
 }
@@ -191,12 +190,46 @@ func ContextMiddleware(handler http.Handler) http.HandlerFunc {
 		context.Set(r, "user", nil)
 		context.Set(r, "session", nil)
 
-		//if tokens, ok := r.Header["Authorization"]; ok {
-		//}
+		if tokens, ok := r.Header["Authorization"]; ok {
+			var store *Store
+
+			for _, t := range tokens {
+				// try to get store, abort if not successful
+				if store == nil {
+					store, _ = GetStore(r)
+				}
+				if store == nil {
+					break
+				}
+
+				// separate from first space, we want a Bearer token
+				splits := strings.Split(t, " ")
+				if len(splits) < 2 || splits[0] != "Bearer" {
+					continue
+				}
+
+				session := &session{store: store}
+				if ok, token := session.Validate(splits[1]); ok {
+					username, _ := token.Claims["usr"].(string)
+					context.Set(r, "user", username)
+					context.Set(r, "session", token)
+					break
+				}
+			}
+		}
 
 		// pass request to next handler
 		handler.ServeHTTP(w, r)
 	}
+}
+
+func GetStore(r *http.Request) (*Store, error) {
+	shandler := context.Get(r, "_store")
+	if s, ok := shandler.(*Store); ok {
+		return s, nil
+	}
+
+	return nil, errors.New("unable to get store from context")
 }
 
 func StackMiddleware(handler http.HandlerFunc, mid ...func(http.Handler) http.HandlerFunc) http.HandlerFunc {
@@ -206,8 +239,17 @@ func StackMiddleware(handler http.HandlerFunc, mid ...func(http.Handler) http.Ha
 	return handler
 }
 
+func LoginRequired(handler http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if u := context.Get(r, "user"); u != nil {
+			handler.ServeHTTP(w, r)
+		} else {
+			ResponseError(w, http.StatusUnauthorized, errors.New("Authorization Required"))
+		}
+	}
+}
+
 func StartAPIServer(root string, store *Store) {
-	globalStore = store
 	go func() {
 		router := mux.NewRouter()
 		router.KeepContext = true // we clean context ourselves in logger
@@ -225,7 +267,15 @@ func StartAPIServer(root string, store *Store) {
 
 		logger := &logger{log.New(os.Stdout, "", 0)}
 		n := negroni.New(negroni.NewRecovery(), logger)
-		n.UseHandler(StackMiddleware(router.ServeHTTP, ContextMiddleware))
+
+		n.UseHandler(StackMiddleware(router.ServeHTTP, ContextMiddleware, func(handler http.Handler) http.HandlerFunc {
+			return func(w http.ResponseWriter, r *http.Request) {
+				// store a handler to the DB to the context
+				context.Set(r, "_store", store)
+				// pass to next handler on stack
+				handler.ServeHTTP(w, r)
+			}
+		}))
 		n.Run("127.0.0.1:4200")
 	}()
 }
