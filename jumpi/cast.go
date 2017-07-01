@@ -53,6 +53,8 @@ type Cast struct {
 	Width    int             `json:"width"`
 	Height   int             `json:"height"`
 	Version  int             `json:"version"`
+	User     string          `json:"user,omitempty"`
+	Target   string          `json:"target,omitempty"`
 
 	recorder chan *castEntry
 	file     *secFile

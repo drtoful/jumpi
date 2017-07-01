@@ -106,7 +106,11 @@ func (server *server) handle(conn net.Conn) {
 		return
 	}
 
-	target.Cast = &Cast{Session: session}
+	target.Cast = &Cast{
+		Session: session,
+		User:    user,
+		Target:  target.ID(),
+	}
 	if err := target.Cast.Start(server.store); err != nil {
 		log.Printf("ssh[%s]: error: %s\n", session, err.Error())
 		return
