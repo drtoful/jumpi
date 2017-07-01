@@ -293,7 +293,7 @@ func (store *Store) Get(bucket []string, key string) ([]byte, error) {
 	return store.decrypt(data)
 }
 
-func (store *Store) Scan(bucket []string, q string, skip, limit int) ([]*keyvalue, error) {
+func (store *Store) Scan(bucket []string, q string, skip, limit int, decrypt bool) ([]*keyvalue, error) {
 	result := make([]*keyvalue, 0)
 	err := store.db.View(func(tx *bolt.Tx) error {
 		b, err := traverseBuckets(bucket, tx)
@@ -324,6 +324,12 @@ func (store *Store) Scan(bucket []string, q string, skip, limit int) ([]*keyvalu
 			}
 
 			v := string(b.Get([]byte(k)))
+			if decrypt {
+				if d, err := store.decrypt([]byte(v)); err == nil {
+					v = string(d)
+				}
+			}
+
 			result = append(result, &keyvalue{Key: string(k), Value: string(v)})
 		}
 

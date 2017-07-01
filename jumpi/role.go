@@ -35,7 +35,7 @@ func InitRoleManager(store *Store) {
 	manager.mutex = &sync.Mutex{}
 
 	log.Println("role_manager: startup, loading stored roles")
-	vals, err := store.Scan(BucketRoles, "", 0, -1)
+	vals, err := store.Scan(BucketRoles, "", 0, 0, false)
 	if err != nil {
 		log.Printf("role_manager: error in loading roles: %s\n", err.Error())
 	}

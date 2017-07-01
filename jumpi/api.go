@@ -1,6 +1,7 @@
 package jumpi
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -16,7 +17,6 @@ import (
 
 	"github.com/codegangsta/negroni"
 	"github.com/dgrijalva/jwt-go"
-	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 )
 
@@ -30,12 +30,13 @@ type Route struct {
 type Routes []Route
 
 func (r Route) Attach(router *mux.Router) {
-	log.Printf("api_server: attaching route: %s %s\n", r.Method, r.Pattern)
-
-	router.Methods(r.Method).
+	ro := router.Methods(r.Method).
 		Path(r.Pattern).
 		Name(r.Name).
 		Handler(r.HandlerFunc)
+
+	tpl, _ := ro.GetPathTemplate()
+	log.Printf("api_server: attaching route: %s %s\n", r.Method, tpl)
 }
 
 func (r Routes) Attach(router *mux.Router) {
@@ -54,14 +55,14 @@ func (l *logger) ServeHTTP(w http.ResponseWriter, r *http.Request, next http.Han
 	res := w.(negroni.ResponseWriter)
 
 	session := "-"
-	if ses := context.Get(r, "session"); ses != nil {
+	if ses := r.Context().Value("session"); ses != nil {
 		token := ses.(*jwt.Token)
 		parts := strings.Split(token.Raw, ".")
 		session = parts[2]
 	}
 
 	user := "-"
-	if usr := context.Get(r, "user"); usr != nil {
+	if usr := r.Context().Value("user"); usr != nil {
 		user = usr.(string)
 	}
 
@@ -87,9 +88,6 @@ func (l *logger) ServeHTTP(w http.ResponseWriter, r *http.Request, next http.Han
 		session,
 		duration,
 	)
-
-	// logging is the last action, so here we can clear the context
-	context.Clear(r)
 }
 
 type JSONRequest struct {
@@ -187,8 +185,8 @@ func ResponseError(w http.ResponseWriter, status int, e error) {
 func ContextMiddleware(handler http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// load authenticated session and add user to context (if found)
-		context.Set(r, "user", nil)
-		context.Set(r, "session", nil)
+		r = r.WithContext(context.WithValue(r.Context(), "user", nil))
+		r = r.WithContext(context.WithValue(r.Context(), "session", nil))
 
 		if tokens, ok := r.Header["Authorization"]; ok {
 			var store *Store
@@ -211,8 +209,8 @@ func ContextMiddleware(handler http.Handler) http.HandlerFunc {
 				session := &session{store: store}
 				if ok, token := session.Validate(splits[1]); ok {
 					username, _ := token.Claims["usr"].(string)
-					context.Set(r, "user", username)
-					context.Set(r, "session", token)
+					r = r.WithContext(context.WithValue(r.Context(), "user", username))
+					r = r.WithContext(context.WithValue(r.Context(), "session", token))
 					break
 				}
 			}
@@ -224,11 +222,12 @@ func ContextMiddleware(handler http.Handler) http.HandlerFunc {
 }
 
 func GetStore(r *http.Request) (*Store, error) {
-	shandler := context.Get(r, "_store")
+	shandler := r.Context().Value("_store")
 	if s, ok := shandler.(*Store); ok {
 		return s, nil
 	}
 
+	log.Printf("api_server: unable to restore store from context: %s %s - %v\n", r.Method, r.URL.Path, shandler)
 	return nil, errors.New("unable to get store from context")
 }
 
@@ -241,7 +240,7 @@ func StackMiddleware(handler http.HandlerFunc, mid ...func(http.Handler) http.Ha
 
 func LoginRequired(handler http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if u := context.Get(r, "user"); u != nil {
+		if u := r.Context().Value("user"); u != nil {
 			handler.ServeHTTP(w, r)
 		} else {
 			ResponseError(w, http.StatusUnauthorized, errors.New("Authorization Required"))
@@ -281,6 +280,7 @@ func StartAPIServer(root string, store *Store) {
 		if _, err := NewAPIv1Router(apiv1); err != nil {
 			log.Fatal(err)
 		}
+		apiv1.KeepContext = true
 
 		logger := &logger{log.New(os.Stdout, "", 0)}
 		n := negroni.New(negroni.NewRecovery(), logger)
@@ -288,7 +288,7 @@ func StartAPIServer(root string, store *Store) {
 		n.UseHandler(StackMiddleware(router.ServeHTTP, ContextMiddleware, func(handler http.Handler) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
 				// store a handler to the DB to the context
-				context.Set(r, "_store", store)
+				r = r.WithContext(context.WithValue(r.Context(), "_store", store))
 				// pass to next handler on stack
 				handler.ServeHTTP(w, r)
 			}

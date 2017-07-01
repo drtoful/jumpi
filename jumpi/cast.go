@@ -400,7 +400,7 @@ func StartIndexerServer(store *Store) error {
 
 	//load existing jobs
 	go func() {
-		kvs, err := store.Scan(BucketCasts, "job~", 0, 0)
+		kvs, err := store.Scan(BucketCasts, "job~", 0, 0, false)
 		if err != nil {
 			return
 		}

@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 )
 
@@ -32,6 +31,10 @@ var (
 		Route{Method: "GET", Pattern: "/secrets/list", HandlerFunc: StackMiddleware(secretList, StoreUnlockRequired, LoginRequired)},
 		Route{Method: "POST", Pattern: "/secrets", HandlerFunc: StackMiddleware(secretSet, StoreUnlockRequired, LoginRequired)},
 		Route{Method: "DELETE", Pattern: "/secrets/{id}", HandlerFunc: StackMiddleware(secretDelete, StoreUnlockRequired, LoginRequired)},
+
+		Route{Method: "GET", Pattern: "/targets/list", HandlerFunc: StackMiddleware(targetList, StoreUnlockRequired, LoginRequired)},
+		Route{Method: "POST", Pattern: "/targets", HandlerFunc: StackMiddleware(targetSet, StoreUnlockRequired, LoginRequired)},
+		Route{Method: "DELETE", Pattern: "/targets/{id}", HandlerFunc: StackMiddleware(targetDelete, StoreUnlockRequired, LoginRequired)},
 	}
 )
 
@@ -169,7 +172,7 @@ func authLogout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if username, ok := context.Get(r, "user").(string); ok {
+	if username, ok := r.Context().Value("user").(string); ok {
 		session := &session{store: store, user: username}
 		if err := session.Logout(); err != nil {
 			ResponseError(w, http.StatusForbidden, err)
@@ -244,7 +247,7 @@ func storeUnlock(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("audit: %v unlocked store successfully\n", context.Get(r, "user"))
+	log.Printf("audit: %v unlocked store successfully\n", r.Context().Value("user"))
 	response := JSONResponse{
 		Status: http.StatusOK,
 	}
@@ -263,7 +266,7 @@ func storeLock(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("audit: %v locked store successfully\n", context.Get(r, "user"))
+	log.Printf("audit: %v locked store successfully\n", r.Context().Value("user"))
 	response := JSONResponse{
 		Status: http.StatusOK,
 	}
@@ -297,9 +300,10 @@ func secretList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	entries, err := store.Scan(BucketSecrets, "", 0, 0)
+	entries, err := store.Scan(BucketSecrets, "", 0, 0, true)
 	if err != nil {
 		ResponseError(w, http.StatusForbidden, err)
+		return
 	}
 
 	type _response struct {
@@ -391,7 +395,7 @@ func secretSet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("audit: %v added secret '%s'\n", context.Get(r, "user"), request.ID)
+	log.Printf("audit: %v added secret '%s'\n", r.Context().Value("user"), request.ID)
 	response := JSONResponse{
 		Status: http.StatusOK,
 	}
@@ -418,11 +422,55 @@ func secretDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("audit: %v added secret '%s'\n", context.Get(r, "user"), id)
+	log.Printf("audit: %v added secret '%s'\n", r.Context().Value("user"), id)
 	response := JSONResponse{
 		Status: http.StatusOK,
 	}
 	response.Write(w)
+}
+
+/******************************************
+ * TARGETS
+ ******************************************/
+func targetList(w http.ResponseWriter, r *http.Request) {
+	store, err := GetStore(r)
+	if err != nil {
+		ResponseError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	entries, err := store.Scan(BucketTargets, "", 0, 0, true)
+	if err != nil {
+		ResponseError(w, http.StatusForbidden, err)
+		return
+	}
+
+	type _response struct {
+		Name   string `json:"name"`
+		Secret string `json:"secret"`
+	}
+
+	c := make([]_response, len(entries))
+	i := 0
+	for _, entry := range entries {
+		c[i] = _response{
+			Name:   entry.Key,
+			Secret: entry.Value,
+		}
+		i += 1
+	}
+
+	response := JSONResponse{
+		Status:  http.StatusOK,
+		Content: c,
+	}
+	response.Write(w)
+}
+
+func targetSet(w http.ResponseWriter, r *http.Request) {
+}
+
+func targetDelete(w http.ResponseWriter, r *http.Request) {
 }
 
 // Main Router
