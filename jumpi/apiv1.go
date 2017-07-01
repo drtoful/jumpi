@@ -35,6 +35,10 @@ var (
 		Route{Method: "GET", Pattern: "/targets/list", HandlerFunc: StackMiddleware(targetList, StoreUnlockRequired, LoginRequired)},
 		Route{Method: "POST", Pattern: "/targets", HandlerFunc: StackMiddleware(targetSet, StoreUnlockRequired, LoginRequired)},
 		Route{Method: "DELETE", Pattern: "/targets/{id}", HandlerFunc: StackMiddleware(targetDelete, StoreUnlockRequired, LoginRequired)},
+
+		Route{Method: "GET", Pattern: "/users/list", HandlerFunc: StackMiddleware(userList, StoreUnlockRequired, LoginRequired)},
+		Route{Method: "POST", Pattern: "/users", HandlerFunc: StackMiddleware(userSet, StoreUnlockRequired, LoginRequired)},
+		Route{Method: "DELETE", Pattern: "/users/{id}", HandlerFunc: StackMiddleware(userDelete, StoreUnlockRequired, LoginRequired)},
 	}
 )
 
@@ -537,6 +541,115 @@ func targetDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Printf("audit: %v removed target '%s'\n", r.Context().Value("user"), id)
+	response := JSONResponse{
+		Status: http.StatusOK,
+	}
+	response.Write(w)
+}
+
+/******************************************
+ * USERS
+ ******************************************/
+func userList(w http.ResponseWriter, r *http.Request) {
+	store, err := GetStore(r)
+	if err != nil {
+		ResponseError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	entries, err := store.Scan(BucketUsers, "", 0, 0, true)
+	if err != nil {
+		ResponseError(w, http.StatusForbidden, err)
+		return
+	}
+
+	type _response struct {
+		Name        string `json:"name"`
+		Fingerprint string `json:"fingerprint"`
+	}
+
+	c := make([]_response, len(entries))
+	i := 0
+	for _, entry := range entries {
+		c[i] = _response{
+			Name:        entry.Value,
+			Fingerprint: entry.Key,
+		}
+		i += 1
+	}
+
+	response := JSONResponse{
+		Status:  http.StatusOK,
+		Content: c,
+	}
+	response.Write(w)
+}
+
+func userSet(w http.ResponseWriter, r *http.Request) {
+	type _request struct {
+		Name string `json:"name" format:"[a-zA-Z0-9\-\_]+"`
+		Pub  string `json:"pub" format:"ssh-rsa [A-Za-z0-9\+\/]+[\=]{0,2}.*"`
+	}
+	var request _request
+
+	jreq, err := ParseJsonRequest(r, &request)
+	if err != nil {
+		ResponseError(w, 422, err)
+		return
+	}
+
+	if err := jreq.Validate(); err != nil {
+		ResponseError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	store, err := GetStore(r)
+	if err != nil {
+		ResponseError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	user, err := UserFromPublicKey(request.Name, request.Pub)
+	if err != nil {
+		ResponseError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if err := user.Store(store); err != nil {
+		ResponseError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	log.Printf("audit: %v added user '%s' with fingerprint '%s'\n", r.Context().Value("user"), request.Name, user.KeyFingerprint)
+	response := JSONResponse{
+		Status: http.StatusOK,
+	}
+	response.Write(w)
+}
+
+func userDelete(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, ok := vars["id"]
+	if !ok {
+		ResponseError(w, http.StatusBadRequest, errors.New("id missing"))
+		return
+	}
+
+	store, err := GetStore(r)
+	if err != nil {
+		ResponseError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	user := &User{
+		KeyFingerprint: id,
+	}
+	if err := user.Delete(store); err != nil {
+		ResponseError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	log.Printf("audit: %v removed user '%s'\n", r.Context().Value("user"), id)
 	response := JSONResponse{
 		Status: http.StatusOK,
 	}
