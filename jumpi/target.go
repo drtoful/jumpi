@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"sync"
 
 	"golang.org/x/crypto/ssh"
@@ -154,6 +155,13 @@ func (target *Target) Connect(newChannel ssh.NewChannel, chans <-chan ssh.NewCha
 		Auth: []ssh.AuthMethod{
 			ssh.PublicKeysCallback(target.authPK),
 			ssh.PasswordCallback(target.authPassword),
+		},
+
+		// this is very trusting and just accepts connections
+		// to everything. maybe add some sort of correct verification
+		// in the future
+		HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
+			return nil
 		},
 	}
 
