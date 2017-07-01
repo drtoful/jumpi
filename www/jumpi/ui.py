@@ -211,11 +211,32 @@ def delete_role():
 @get("/casts")
 @authenticated
 @templated("casts.xhtml")
-def cast():
-    id = request.args.get("id", None)
+def casts():
+    api = APICasts()
+
+    page = 0
+    try:
+        page = int(request.args.get("p", 0))
+    except:
+        pass
+
+    return dict(casts = api.list(page*10, 10), page = page)
+
+@post("/casts/player")
+@authenticated
+def player_post():
+    id = request.form.get("id", "")
+    if len(id) == 0:
+        return redirect(url_for("ui.casts"))
+    return redirect(url_for('ui.player', id=id))
+
+@get("/casts/player/<id>")
+@authenticated
+@templated("player.xhtml")
+def player(id):
     if not id is None and len(id) > 0:
         return dict(id = id)
-    return redirect(url_for("ui.index"))
+    return redirect(url_for("ui.casts"))
 
 @get("/casts/<id>.json")
 @authenticated

@@ -17,10 +17,9 @@ class API(object):
             return False, None
         try:
             data = r.json()
-            if r.status_code == 200:
-                return True, data['response']
-            else:
-                return False, data['description']
+            if r.status_code == 500:
+                print "server error from API server: "+data.get('response', "")
+            return r.status_code == 200, data.get('response', None)
         except:
             pass
         return False, None
@@ -59,76 +58,66 @@ api = API()
 
 class APIAuth(object):
     def login(self, username, password):
-        ok, session = api.post("/auth/login", dict( \
+        ok, session = api.post("/v1/auth/login", dict( \
             username = username, password = password))
         if ok:
             return session
         return None
 
     def validate(self):
-        ok, _ = api.get("/auth/validate")
+        ok, _ = api.get("/v1/auth/validate")
         return ok
 
     def logout(self):
-        ok, _ = api.get("/auth/logout")
+        ok, _ = api.get("/v1/auth/logout")
         return ok
 
 class APIStore(object):
     def is_locked(self):
-        ok, val = api.get("/store/status")
+        ok, val = api.get("/v1/store/status")
         if ok:
-            return val
+            return val.get("locked", True)
         return True
 
     def unlock(self, password):
-        ok, _ = api.post("/store/unlock", dict( \
+        ok, _ = api.post("/v1/store/unlock", dict( \
             password = password))
         return ok
 
     def lock(self):
-        ok, _ = api.post("/store/lock", None)
+        ok, _ = api.post("/v1/store/lock", None)
         return ok
 
 class APISecrets(object):
     def list(self, skip, limit):
-        ok, vals = api.get("/secrets", dict( \
+        ok, vals = api.get("/v1/secrets/list", dict( \
             skip = skip, limit = limit))
-
         if ok:
-            nvals = []
-            for k in vals:
-                try:
-                    k["value"] = json.loads(k["value"])
-                    del k["value"]["data"]
-                    nvals = nvals + [k]
-                except:
-                    pass
-
-            return nvals
-        return None
+            return vals
+        return []
 
     def set(self, name, type, data):
-        ok, err = api.post("/secrets", dict( \
+        ok, err = api.post("/v1/secrets", dict( \
             id = name, type = type, data = data))
         if not ok:
             return err
         return None
 
     def delete(self, id):
-        ok, _ = api.delete("/secrets", dict(id = id ))
+        ok, _ = api.delete("/v1/secrets/"+id)
         return ok
 
 class APITargets(object):
     def list(self, skip, limit):
-        ok, vals = api.get("/targets", dict( \
+        ok, vals = api.get("/v1/targets/list", dict( \
             skip = skip, limit = limit))
 
         if ok:
             return vals
-        return None
+        return []
 
     def set(self, user, hostname, port, secret):
-        ok, err = api.post("/targets", dict( \
+        ok, err = api.post("/v1/targets", dict( \
             user = user, host = hostname, \
             port = port, secret = secret))
         if not ok:
@@ -136,60 +125,60 @@ class APITargets(object):
         return None
 
     def delete(self, id):
-        ok, _ = api.delete("/targets", dict(id = id ))
+        ok, _ = api.delete("/v1/targets/"+id)
         return ok
 
 class APIUsers(object):
     def list(self, skip, limit):
-        ok, vals = api.get("/users", dict( \
+        ok, vals = api.get("/v1/users/list", dict( \
             skip = skip, limit = limit))
 
         if ok:
             return vals
-        return None
+        return []
 
     def set(self, name, pub):
-        ok, err = api.post("/users", dict( \
+        ok, err = api.post("/v1/users", dict( \
             name = name, pub = pub))
         if not ok:
             return err
         return None
 
     def delete(self, id):
-        ok, _ = api.delete("/users", dict(id = id ))
+        ok, _ = api.delete("/v1/users/"+id)
         return ok
 
 class APIRoles(object):
     def list(self, skip, limit):
-        ok, vals = api.get("/roles", dict( \
+        ok, vals = api.get("/v1/roles/list", dict( \
             skip = skip, limit = limit))
 
         if ok:
-            nvals = []
-            for k in vals:
-                try:
-                    k["value"] = json.loads(k["value"])
-                    nvals = nvals + [k]
-                except:
-                    pass
-
-            return nvals
-        return None
+            return vals
+        return []
 
     def set(self, name, rex_user, rex_target):
-        ok, err = api.post("/roles", dict( \
+        ok, err = api.post("/v1/roles", dict( \
             name = name, rex_user = rex_user, rex_target = rex_target))
         if not ok:
             return err
         return None
 
     def delete(self, id):
-        ok, _ = api.delete("/roles", dict(id = id))
+        ok, _ = api.delete("/v1/roles/"+id)
         return ok
 
 class APICasts(object):
+    def list(self, skip, limit):
+        ok, vals = api.get("/v1/casts/list", dict( \
+            skip = skip, limit = limit))
+
+        if ok:
+            return vals
+        return []
+
     def get(self, id):
-        ok, data = api.get("/casts", dict(id = id))
+        ok, data = api.get("/v1/casts/"+id)
         if not ok:
             return None
         return data

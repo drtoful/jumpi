@@ -15,10 +15,10 @@
     {% if users %}
     {% for t in users %}
         <tr>
-            <td>{{ t.value }}</td>
-            <td>{{ t.key }}</td>
+            <td>{{ t.name }}</td>
+            <td>{{ t.fingerprint }}</td>
             <td>
-                <a href="{{ url_for('ui.delete_user') }}?id={{ t.key }}"><span class="fa fa-trash"></span></a>
+                <a href="{{ url_for('ui.delete_user') }}?id={{ t.fingerprint }}"><span class="fa fa-trash"></span></a>
             </td>
         </tr>
     {% endfor %}
@@ -31,17 +31,6 @@
     {% endif %}
     </tbody>
 </table>
-
-<nav aria-label="pages">
-    <ul class="pager">
-        {% if page > 0 %}
-        <li class="previous"><a href="{{ url_for('ui.users') }}?p={{ page-1 }}"><span aria-hidden="true">&larr;</span> Previous</a></li>
-        {% endif %}
-        {% if secrets|length == 10 %}
-        <li class="next"><a href="{{ url_for('ui.users') }}?p={{ page+1 }}">Next <span aria-hidden="true">&rarr;</span></a></li>
-        {% endif %}
-    </ul>
-</nav>
 
 {% if error %}
 <div class="alert alert-danger" role="alert">

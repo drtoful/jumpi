@@ -32,20 +32,11 @@
                     <li><a href="{{ url_for('ui.targets') }}"><span class="fa fa-terminal"></span></a></li>
                     <li><a href="{{ url_for('ui.users') }}"><span class="fa fa-user"></span></a></li>
                     <li><a href="{{ url_for('ui.roles') }}"><span class="fa fa-puzzle-piece"></span></a></li>
+                    <li><a href="{{ url_for('ui.casts') }}"><span class="fa fa-play"></span></a></li>
                     {% if session %}
                     <li><a href="{{ url_for('ui.store') }}"><span class="fa {% if session.store_locked %}fa-lock text-danger{% else %}fa-unlock text-success{% endif %}"></span></a></li>
                     {% endif %}
                 </ul>
-
-                <!-- quick jump to casts -->
-                {% if session %}
-                <form class="navbar-form navbar-left" action="{{ url_for('ui.cast') }}" method="GET">
-                    <div class="form-group">
-                        <input type="text" name="id" class="form-control" placeholder="Session">
-                    </div>
-                    <button type="submit" class="btn btn-link"><i class="fa fa-play"></i></button>
-                </form>
-                {% endif %}
 
                 <!-- User -->
                 {% if session.username %}

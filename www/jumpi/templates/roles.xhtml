@@ -16,11 +16,11 @@
     {% if roles %}
     {% for r in roles %}
         <tr>
-            <td>{{ r.key }}</td>
-            <td>{{ r.value.rex_user }}</td>
-            <td>{{ r.value.rex_target }}</td>
+            <td>{{ r.name }}</td>
+            <td>{{ r.rex_user }}</td>
+            <td>{{ r.rex_target }}</td>
             <td>
-                <a href="{{ url_for('ui.delete_role') }}?id={{ r.key }}"><span class="fa fa-trash"></span></a>
+                <a href="{{ url_for('ui.delete_role') }}?id={{ r.name }}"><span class="fa fa-trash"></span></a>
             </td>
         </tr>
     {% endfor %}
@@ -33,17 +33,6 @@
     {% endif %}
     </tbody>
 </table>
-
-<nav aria-label="pages">
-    <ul class="pager">
-        {% if page > 0 %}
-        <li class="previous"><a href="{{ url_for('ui.roles') }}?p={{ page-1 }}"><span aria-hidden="true">&larr;</span> Previous</a></li>
-        {% endif %}
-        {% if secrets|length == 10 %}
-        <li class="next"><a href="{{ url_for('ui.roles') }}?p={{ page+1 }}">Next <span aria-hidden="true">&rarr;</span></a></li>
-        {% endif %}
-    </ul>
-</nav>
 
 {% if error %}
 <div class="alert alert-danger" role="alert">
