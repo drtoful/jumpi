@@ -6,6 +6,7 @@ import (
 	"log"
 	"regexp"
 	"sync"
+	"time"
 )
 
 type Role struct {
@@ -34,23 +35,33 @@ func InitRoleManager(store *Store) {
 	manager.roles = make(map[string]*Role)
 	manager.mutex = &sync.Mutex{}
 
-	log.Println("role_manager: startup, loading stored roles")
-	vals, err := store.Scan(BucketRoles, "", 0, 0, false)
-	if err != nil {
-		log.Printf("role_manager: error in loading roles: %s\n", err.Error())
-	}
-
-	for _, r := range vals {
-		var role Role
-		if err := json.Unmarshal([]byte(r.Value), &role); err != nil {
-			log.Printf("role_manager: unable to parse role '%s': %s\n", r.Key, err.Error())
-			continue
+	go func() {
+		// we wait for the store to unlock
+		for {
+			if !store.IsLocked() {
+				break
+			}
+			time.Sleep(time.Second)
 		}
 
-		if err := AddRole(&role); err != nil {
-			log.Printf("role_manager: unable to parse role '%s': %s\n", r.Key, err.Error())
+		log.Println("role_manager: startup, loading stored roles")
+		vals, err := store.Scan(BucketRoles, "", 0, 0, true)
+		if err != nil {
+			log.Printf("role_manager: error in loading roles: %s\n", err.Error())
 		}
-	}
+
+		for _, r := range vals {
+			var role Role
+			if err := json.Unmarshal([]byte(r.Value), &role); err != nil {
+				log.Printf("role_manager: unable to parse role '%s': %s\n", r.Key, err.Error())
+				continue
+			}
+
+			if err := AddRole(&role); err != nil {
+				log.Printf("role_manager: unable to parse role '%s': %s\n", r.Key, err.Error())
+			}
+		}
+	}()
 }
 
 func AddRole(role *Role) error {
