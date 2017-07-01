@@ -468,9 +468,79 @@ func targetList(w http.ResponseWriter, r *http.Request) {
 }
 
 func targetSet(w http.ResponseWriter, r *http.Request) {
+	type _request struct {
+		Username string `json:"user" format:"\w+"`
+		Hostname string `json:"host" format:".+"`
+		Port     int    `json:"port"`
+		Secret   string `json:"secret" format:".+"`
+	}
+	var request _request
+
+	jreq, err := ParseJsonRequest(r, &request)
+	if err != nil {
+		ResponseError(w, 422, err)
+		return
+	}
+
+	if err := jreq.Validate(); err != nil {
+		ResponseError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if request.Port < 1 || request.Port > 65535 {
+		ResponseError(w, http.StatusBadRequest, errors.New("port number out of range"))
+		return
+	}
+
+	store, err := GetStore(r)
+	if err != nil {
+		ResponseError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	target := &Target{
+		Username: request.Username,
+		Hostname: request.Hostname,
+		Port:     request.Port,
+		Secret:   &Secret{ID: request.Secret},
+	}
+
+	if err := target.Store(store); err != nil {
+		ResponseError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	log.Printf("audit: %v added target '%s' referencing secret '%s'\n", r.Context().Value("user"), target.ID(), request.Secret)
+	response := JSONResponse{
+		Status: http.StatusOK,
+	}
+	response.Write(w)
 }
 
 func targetDelete(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, ok := vars["id"]
+	if !ok {
+		ResponseError(w, http.StatusBadRequest, errors.New("id missing"))
+		return
+	}
+
+	store, err := GetStore(r)
+	if err != nil {
+		ResponseError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if err := store.Delete(BucketTargets, id); err != nil {
+		ResponseError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	log.Printf("audit: %v removed target '%s'\n", r.Context().Value("user"), id)
+	response := JSONResponse{
+		Status: http.StatusOK,
+	}
+	response.Write(w)
 }
 
 // Main Router
