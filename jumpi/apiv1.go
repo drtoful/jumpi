@@ -3,6 +3,7 @@ package jumpi
 import (
 	"crypto/rand"
 	"crypto/x509"
+	"encoding/json"
 	"encoding/pem"
 	"errors"
 	"io"
@@ -39,6 +40,10 @@ var (
 		Route{Method: "GET", Pattern: "/users/list", HandlerFunc: StackMiddleware(userList, StoreUnlockRequired, LoginRequired)},
 		Route{Method: "POST", Pattern: "/users", HandlerFunc: StackMiddleware(userSet, StoreUnlockRequired, LoginRequired)},
 		Route{Method: "DELETE", Pattern: "/users/{id}", HandlerFunc: StackMiddleware(userDelete, StoreUnlockRequired, LoginRequired)},
+
+		Route{Method: "GET", Pattern: "/roles/list", HandlerFunc: StackMiddleware(roleList, StoreUnlockRequired, LoginRequired)},
+		Route{Method: "POST", Pattern: "/roles", HandlerFunc: StackMiddleware(roleSet, StoreUnlockRequired, LoginRequired)},
+		Route{Method: "DELETE", Pattern: "/roles/{id}", HandlerFunc: StackMiddleware(roleDelete, StoreUnlockRequired, LoginRequired)},
 	}
 )
 
@@ -650,6 +655,102 @@ func userDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Printf("audit: %v removed user '%s'\n", r.Context().Value("user"), id)
+	response := JSONResponse{
+		Status: http.StatusOK,
+	}
+	response.Write(w)
+}
+
+/******************************************
+ * ROLES
+ ******************************************/
+func roleList(w http.ResponseWriter, r *http.Request) {
+	store, err := GetStore(r)
+	if err != nil {
+		ResponseError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	entries, err := store.Scan(BucketRoles, "", 0, 0, true)
+	if err != nil {
+		ResponseError(w, http.StatusForbidden, err)
+		return
+	}
+
+	c := make([]Role, len(entries))
+	i := 0
+	for _, entry := range entries {
+		var role Role
+		if err := json.Unmarshal([]byte(entry.Value), &role); err != nil {
+			continue
+		}
+
+		c[i] = role
+		i += 1
+	}
+
+	response := JSONResponse{
+		Status:  http.StatusOK,
+		Content: c,
+	}
+	response.Write(w)
+}
+
+func roleSet(w http.ResponseWriter, r *http.Request) {
+	var request Role
+
+	jreq, err := ParseJsonRequest(r, &request)
+	if err != nil {
+		ResponseError(w, 422, err)
+		return
+	}
+
+	if err := jreq.Validate(); err != nil {
+		ResponseError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	store, err := GetStore(r)
+	if err != nil {
+		ResponseError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if err := request.Store(store); err != nil {
+		ResponseError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	log.Printf("audit: %v added role '%s' with user regex '%s' and target regex '%s'\n", r.Context().Value("user"), request.Name, request.UserRegex, request.TargetRegex)
+	response := JSONResponse{
+		Status: http.StatusOK,
+	}
+	response.Write(w)
+}
+
+func roleDelete(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, ok := vars["id"]
+	if !ok {
+		ResponseError(w, http.StatusBadRequest, errors.New("id missing"))
+		return
+	}
+
+	store, err := GetStore(r)
+	if err != nil {
+		ResponseError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	role := &Role{
+		Name: id,
+	}
+	if err := role.Delete(store); err != nil {
+		ResponseError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	log.Printf("audit: %v removed role '%s'\n", r.Context().Value("user"), id)
 	response := JSONResponse{
 		Status: http.StatusOK,
 	}
