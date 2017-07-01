@@ -8,6 +8,7 @@ import (
 	"errors"
 
 	"github.com/drtoful/jumpi/utils"
+	"golang.org/x/crypto/ssh"
 )
 
 type TypeSecret int
@@ -30,6 +31,20 @@ type Secret struct {
 	ID     string
 	Type   TypeSecret
 	Secret interface{}
+}
+
+func (secret *Secret) Fingerprint() string {
+	if secret.Type == PKey {
+		if val, ok := secret.Secret.(*rsa.PrivateKey); ok {
+			public := val.Public()
+			sshpublic, err := ssh.NewPublicKey(public)
+			if err == nil {
+				return ssh.FingerprintSHA256(sshpublic)
+			}
+		}
+	}
+
+	return ""
 }
 
 func (secret *Secret) Load(store *Store) error {

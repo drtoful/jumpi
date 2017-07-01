@@ -249,6 +249,23 @@ func LoginRequired(handler http.Handler) http.HandlerFunc {
 	}
 }
 
+func StoreUnlockRequired(handler http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		store, err := GetStore(r)
+		if err != nil {
+			ResponseError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		if store.IsLocked() {
+			ResponseError(w, http.StatusPreconditionFailed, errors.New("store is not unlocked"))
+			return
+		}
+
+		handler.ServeHTTP(w, r)
+	}
+}
+
 func StartAPIServer(root string, store *Store) {
 	go func() {
 		router := mux.NewRouter()

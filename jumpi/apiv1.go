@@ -2,6 +2,8 @@ package jumpi
 
 import (
 	"crypto/rand"
+	"crypto/x509"
+	"encoding/pem"
 	"errors"
 	"io"
 	"log"
@@ -26,6 +28,10 @@ var (
 		Route{Method: "POST", Pattern: "/store/unlock", HandlerFunc: StackMiddleware(storeUnlock, LoginRequired)},
 		Route{Method: "POST", Pattern: "/store/lock", HandlerFunc: StackMiddleware(storeLock, LoginRequired)},
 		Route{Method: "GET", Pattern: "/store/status", HandlerFunc: StackMiddleware(storeStatus, LoginRequired)},
+
+		Route{Method: "GET", Pattern: "/secrets/list", HandlerFunc: StackMiddleware(secretList, StoreUnlockRequired, LoginRequired)},
+		Route{Method: "POST", Pattern: "/secrets", HandlerFunc: StackMiddleware(secretSet, StoreUnlockRequired, LoginRequired)},
+		Route{Method: "DELETE", Pattern: "/secrets/{id}", HandlerFunc: StackMiddleware(secretDelete, StoreUnlockRequired, LoginRequired)},
 	}
 )
 
@@ -277,6 +283,144 @@ func storeStatus(w http.ResponseWriter, r *http.Request) {
 	response := JSONResponse{
 		Status:  http.StatusOK,
 		Content: c,
+	}
+	response.Write(w)
+}
+
+/******************************************
+ * SECRETS
+ ******************************************/
+func secretList(w http.ResponseWriter, r *http.Request) {
+	store, err := GetStore(r)
+	if err != nil {
+		ResponseError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	entries, err := store.Scan(BucketSecrets, "", 0, 0)
+	if err != nil {
+		ResponseError(w, http.StatusForbidden, err)
+	}
+
+	type _response struct {
+		Name        string     `json:"name"`
+		Type        TypeSecret `json:"type"`
+		Fingerprint string     `json:"fingerprint,omitempty"`
+	}
+
+	c := make([]_response, len(entries))
+	i := 0
+	for _, entry := range entries {
+		// parse secret for more information
+		secret := &Secret{
+			ID: entry.Key,
+		}
+		if err := secret.Load(store); err != nil {
+			continue
+		}
+
+		c[i] = _response{
+			Name:        entry.Key,
+			Type:        secret.Type,
+			Fingerprint: secret.Fingerprint(),
+		}
+		i += 1
+	}
+
+	response := JSONResponse{
+		Status:  http.StatusOK,
+		Content: c,
+	}
+	response.Write(w)
+}
+
+func secretSet(w http.ResponseWriter, r *http.Request) {
+	type _request struct {
+		ID   string `json:"id" valid:"[^~\/]{3,}"`
+		Type int    `json:"type"`
+		Data string `json:"data"`
+	}
+	var request _request
+
+	jreq, err := ParseJsonRequest(r, &request)
+	if err != nil {
+		ResponseError(w, 422, err)
+		return
+	}
+
+	if err := jreq.Validate(); err != nil {
+		ResponseError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	secret := &Secret{
+		ID: request.ID,
+	}
+	switch TypeSecret(request.Type) {
+	case Password:
+		secret.Secret = request.Data
+		break
+	case PKey:
+		block, _ := pem.Decode([]byte(request.Data))
+		if block == nil || block.Type != "RSA PRIVATE KEY" {
+			ResponseError(w, http.StatusBadRequest, err)
+			return
+		}
+
+		pkey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+		if err != nil {
+			ResponseError(w, http.StatusBadRequest, err)
+			return
+		}
+
+		secret.Secret = pkey
+		break
+	default:
+		ResponseError(w, http.StatusBadRequest, errors.New("unknown type"))
+		return
+	}
+
+	store, err := GetStore(r)
+	if err != nil {
+		ResponseError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if err := secret.Store(store); err != nil {
+		ResponseError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	log.Printf("audit: %v added secret '%s'\n", context.Get(r, "user"), request.ID)
+	response := JSONResponse{
+		Status: http.StatusOK,
+	}
+	response.Write(w)
+}
+
+func secretDelete(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, ok := vars["id"]
+	if !ok {
+		ResponseError(w, http.StatusBadRequest, errors.New("id missing"))
+		return
+	}
+
+	store, err := GetStore(r)
+	if err != nil {
+		ResponseError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	secret := &Secret{ID: id}
+	if err := secret.Delete(store); err != nil {
+		ResponseError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	log.Printf("audit: %v added secret '%s'\n", context.Get(r, "user"), id)
+	response := JSONResponse{
+		Status: http.StatusOK,
 	}
 	response.Write(w)
 }
