@@ -47,9 +47,9 @@ type secFileJob struct {
 }
 
 type Cast struct {
-	Session  string          `json:"-"`
+	Session  string          `json:"session"`
 	Duration float64         `json:"duration"`
-	Records  [][]interface{} `json:"stdout"`
+	Records  [][]interface{} `json:"stdout,omitempty"`
 	Width    int             `json:"width"`
 	Height   int             `json:"height"`
 	Version  int             `json:"version"`

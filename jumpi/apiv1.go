@@ -44,6 +44,9 @@ var (
 		Route{Method: "GET", Pattern: "/roles/list", HandlerFunc: StackMiddleware(roleList, StoreUnlockRequired, LoginRequired)},
 		Route{Method: "POST", Pattern: "/roles", HandlerFunc: StackMiddleware(roleSet, StoreUnlockRequired, LoginRequired)},
 		Route{Method: "DELETE", Pattern: "/roles/{id}", HandlerFunc: StackMiddleware(roleDelete, StoreUnlockRequired, LoginRequired)},
+
+		Route{Method: "GET", Pattern: "/casts/list", HandlerFunc: StackMiddleware(castList, StoreUnlockRequired, LoginRequired)},
+		Route{Method: "GET", Pattern: "/casts/{id}", HandlerFunc: StackMiddleware(castGet, StoreUnlockRequired, LoginRequired)},
 	}
 )
 
@@ -753,6 +756,76 @@ func roleDelete(w http.ResponseWriter, r *http.Request) {
 	log.Printf("audit: %v removed role '%s'\n", r.Context().Value("user"), id)
 	response := JSONResponse{
 		Status: http.StatusOK,
+	}
+	response.Write(w)
+}
+
+/******************************************
+ * CASTS
+ ******************************************/
+func castGet(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, ok := vars["id"]
+	if !ok {
+		ResponseError(w, http.StatusBadRequest, errors.New("id missing"))
+		return
+	}
+
+	store, err := GetStore(r)
+	if err != nil {
+		ResponseError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	data, err := store.Get(BucketCasts, id)
+	if len(data) == 0 || err != nil {
+		ResponseError(w, http.StatusNotFound, errors.New("no such cast"))
+		return
+	}
+
+	var cast Cast
+	if err := json.Unmarshal([]byte(data), &cast); err != nil {
+		ResponseError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	response := JSONResponse{
+		Status:  http.StatusOK,
+		Content: cast,
+	}
+	response.Write(w)
+}
+
+func castList(w http.ResponseWriter, r *http.Request) {
+	store, err := GetStore(r)
+	if err != nil {
+		ResponseError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	entries, err := store.Scan(BucketCasts, "", 0, 0, true)
+	if err != nil {
+		ResponseError(w, http.StatusForbidden, err)
+		return
+	}
+
+	c := make([]Cast, len(entries))
+	i := 0
+	for _, entry := range entries {
+		var cast Cast
+		if err := json.Unmarshal([]byte(entry.Value), &cast); err != nil {
+			continue
+		}
+		cast.Records = nil // do not transfer complete cast
+		cast.Session = entry.Key
+
+		c[i] = cast
+		i += 1
+	}
+
+	response := JSONResponse{
+		Status:  http.StatusOK,
+		Content: c,
 	}
 	response.Write(w)
 }
