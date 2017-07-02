@@ -334,7 +334,7 @@ func (cast *Cast) Store(store *Store) error {
 		rand.Read(jdata)
 	}()
 
-	store.Set(BucketCasts, "start~"+cast.StartTime, []byte(cast.Session))
+	store.Set(BucketCasts, "start~"+cast.StartTime+"~"+cast.Session, []byte(cast.Session))
 	store.Set(BucketCasts, "start~~", []byte(cast.StartTime))
 	return store.Set(BucketCasts, "cast~"+cast.Session, jdata)
 }
