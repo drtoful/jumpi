@@ -1,0 +1,61 @@
+{
+	"ImportPath": "github.com/drtoful/jumpi",
+	"GoVersion": "go1.8",
+	"Packages": [
+		"./..."
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/boltdb/bolt",
+			"Comment": "v1.1.0-32-g827f56d",
+			"Rev": "827f56dfb2091be2edb284ffb6113c198f27b033"
+		},
+		{
+			"ImportPath": "github.com/codahale/chacha20",
+			"Rev": "ec07b4f69a3f70b1dd2a8ad77230deb1ba5d6953"
+		},
+		{
+			"ImportPath": "github.com/codegangsta/negroni",
+			"Comment": "v0.1-70-gc7477ad",
+			"Rev": "c7477ad8e330bef55bf1ebe300cf8aa67c492d1b"
+		},
+		{
+			"ImportPath": "github.com/dgrijalva/jwt-go",
+			"Comment": "v2.3.0-10-g9a00cd5",
+			"Rev": "9a00cd52d4fdc3c7712f517013a42183b5e459e7"
+		},
+		{
+			"ImportPath": "github.com/gorilla/mux",
+			"Comment": "v1.4.0-11-g8c683ee",
+			"Rev": "8c683ee571b6ee7ffc9f1cafd13103c422e71cbf"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/bcrypt",
+			"Rev": "adbae1b6b6fb4b02448a0fc0dbbc9ba2b95b294d"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/blowfish",
+			"Rev": "adbae1b6b6fb4b02448a0fc0dbbc9ba2b95b294d"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/curve25519",
+			"Rev": "adbae1b6b6fb4b02448a0fc0dbbc9ba2b95b294d"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/ed25519",
+			"Rev": "adbae1b6b6fb4b02448a0fc0dbbc9ba2b95b294d"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/pbkdf2",
+			"Rev": "adbae1b6b6fb4b02448a0fc0dbbc9ba2b95b294d"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/ssh",
+			"Rev": "adbae1b6b6fb4b02448a0fc0dbbc9ba2b95b294d"
+		},
+		{
+			"ImportPath": "golang.org/x/sys/unix",
+			"Rev": "b518c298ac9dc94b6ac0757394f50d10c5dfa25a"
+		}
+	]
+}
