@@ -1,7 +1,2 @@
 List of various todos before jumpi is considered stable:
 
-- restructure API
-  * remove unneeded serialization/de-serialization of json within go-API
-- handle keys with care
-  * secret keys are somewhat lingering in memory, since they are cast
-    to string to []byte and back, which is uneccessary

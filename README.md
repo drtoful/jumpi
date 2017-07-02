@@ -72,6 +72,21 @@ need to provide a string that has the following format:
 
     <user>@<host>:<port>
 
+## Security
+
+The source-code is currently not peer-reviewed for security.
+
+Because go has its own memory managment, I have somewhat limited access and control what go does
+with variables, and when and how it cleans its memory pages associated to it. Which means, that
+passwords and secrets can linger in memory for quite some time before go is cleaning them up (if
+at all).
+
+Passwords and Secrets that get stored onto disk should be stored secure (in a somewhat similar
+fashion as KeePass does) using ChaCha20 as a stream-cipher. Every password is encrypted using
+a randomly generated password (which can in turn only decrypted via the store password), so if
+you loose your store password, all passwords will be lost. So it is recommended that you store
+them somewhere else (best in your own personal password safe).
+
 ## License
 
 JumPi is licensed under the BSD License. See LICENSE for more information.
