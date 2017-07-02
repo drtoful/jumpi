@@ -9,6 +9,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -127,6 +128,29 @@ func (session *session) Validate(rawToken string) (bool, *jwt.Token) {
 	}
 
 	return false, nil
+}
+
+func parseSkipLimit(r *http.Request) (skip int, limit int) {
+	skip = 0
+	limit = 10
+
+	if err := r.ParseForm(); err != nil {
+		return
+	}
+
+	if vals, ok := r.Form["skip"]; ok {
+		if i, err := strconv.ParseInt(vals[0], 10, 64); err == nil {
+			skip = int(i)
+		}
+	}
+
+	if vals, ok := r.Form["limit"]; ok {
+		if i, err := strconv.ParseInt(vals[0], 10, 64); err == nil {
+			limit = int(i)
+		}
+	}
+
+	return
 }
 
 /******************************************
@@ -312,7 +336,8 @@ func secretList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	entries, err := store.Scan(BucketSecrets, "", 0, 0, true, false)
+	skip, limit := parseSkipLimit(r)
+	entries, err := store.Scan(BucketSecrets, "", skip, limit, true, false)
 	if err != nil {
 		ResponseError(w, http.StatusForbidden, err)
 		return
@@ -451,7 +476,8 @@ func targetList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	entries, err := store.Scan(BucketTargets, "", 0, 0, true, false)
+	skip, limit := parseSkipLimit(r)
+	entries, err := store.Scan(BucketTargets, "", skip, limit, true, false)
 	if err != nil {
 		ResponseError(w, http.StatusForbidden, err)
 		return
@@ -565,7 +591,8 @@ func userList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	entries, err := store.Scan(BucketUsers, "", 0, 0, true, false)
+	skip, limit := parseSkipLimit(r)
+	entries, err := store.Scan(BucketUsers, "", skip, limit, true, false)
 	if err != nil {
 		ResponseError(w, http.StatusForbidden, err)
 		return
@@ -674,7 +701,8 @@ func roleList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	entries, err := store.Scan(BucketRoles, "", 0, 0, true, false)
+	skip, limit := parseSkipLimit(r)
+	entries, err := store.Scan(BucketRoles, "", skip, limit, true, false)
 	if err != nil {
 		ResponseError(w, http.StatusForbidden, err)
 		return
@@ -803,7 +831,8 @@ func castList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	entries, err := store.Scan(BucketCasts, "start~", 0, 0, true, true)
+	skip, limit := parseSkipLimit(r)
+	entries, err := store.Scan(BucketCasts, "start~", skip, limit, true, true)
 	if err != nil {
 		ResponseError(w, http.StatusForbidden, err)
 		return
