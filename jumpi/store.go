@@ -293,7 +293,7 @@ func (store *Store) Get(bucket []string, key string) ([]byte, error) {
 	return store.decrypt(data)
 }
 
-func (store *Store) Scan(bucket []string, q string, skip, limit int, decrypt bool) ([]*keyvalue, error) {
+func (store *Store) Scan(bucket []string, q string, skip, limit int, decrypt, reverse bool) ([]*keyvalue, error) {
 	result := make([]*keyvalue, 0)
 	err := store.db.View(func(tx *bolt.Tx) error {
 		b, err := traverseBuckets(bucket, tx)
@@ -302,9 +302,23 @@ func (store *Store) Scan(bucket []string, q string, skip, limit int, decrypt boo
 		}
 
 		prefix := []byte(q)
+		seek_prefix := []byte(q)
+		if reverse {
+			seek_prefix = []byte(q + "~")
+		}
 		c := b.Cursor()
+
+		move_func := c.Next
+		if reverse {
+			move_func = c.Prev
+		}
+
 		n := -1
-		for k, _ := c.Seek(prefix); bytes.HasPrefix(k, prefix); k, _ = c.Next() {
+		for k, _ := c.Seek(seek_prefix); bytes.HasPrefix(k, prefix); k, _ = move_func() {
+			if reverse && bytes.HasPrefix(k, seek_prefix) {
+				continue
+			}
+
 			n += 1
 			if n < skip {
 				continue

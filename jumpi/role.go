@@ -45,7 +45,7 @@ func InitRoleManager(store *Store) {
 		}
 
 		log.Println("role_manager: startup, loading stored roles")
-		vals, err := store.Scan(BucketRoles, "", 0, 0, true)
+		vals, err := store.Scan(BucketRoles, "", 0, 0, true, false)
 		if err != nil {
 			log.Printf("role_manager: error in loading roles: %s\n", err.Error())
 		}

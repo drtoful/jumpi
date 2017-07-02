@@ -335,6 +335,7 @@ func (cast *Cast) Store(store *Store) error {
 	}()
 
 	store.Set(BucketCasts, "start~"+cast.StartTime, []byte(cast.Session))
+	store.Set(BucketCasts, "start~~", []byte(cast.StartTime))
 	return store.Set(BucketCasts, "cast~"+cast.Session, jdata)
 }
 
@@ -406,7 +407,7 @@ func StartIndexerServer(store *Store) error {
 
 	//load existing jobs
 	go func() {
-		kvs, err := store.Scan(BucketCasts, "job~", 0, 0, false)
+		kvs, err := store.Scan(BucketCasts, "job~", 0, 0, false, false)
 		if err != nil {
 			return
 		}

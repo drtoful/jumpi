@@ -312,7 +312,7 @@ func secretList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	entries, err := store.Scan(BucketSecrets, "", 0, 0, true)
+	entries, err := store.Scan(BucketSecrets, "", 0, 0, true, false)
 	if err != nil {
 		ResponseError(w, http.StatusForbidden, err)
 		return
@@ -451,7 +451,7 @@ func targetList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	entries, err := store.Scan(BucketTargets, "", 0, 0, true)
+	entries, err := store.Scan(BucketTargets, "", 0, 0, true, false)
 	if err != nil {
 		ResponseError(w, http.StatusForbidden, err)
 		return
@@ -565,7 +565,7 @@ func userList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	entries, err := store.Scan(BucketUsers, "", 0, 0, true)
+	entries, err := store.Scan(BucketUsers, "", 0, 0, true, false)
 	if err != nil {
 		ResponseError(w, http.StatusForbidden, err)
 		return
@@ -674,7 +674,7 @@ func roleList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	entries, err := store.Scan(BucketRoles, "", 0, 0, true)
+	entries, err := store.Scan(BucketRoles, "", 0, 0, true, false)
 	if err != nil {
 		ResponseError(w, http.StatusForbidden, err)
 		return
@@ -803,7 +803,7 @@ func castList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	entries, err := store.Scan(BucketCasts, "start~", 0, 0, true)
+	entries, err := store.Scan(BucketCasts, "start~", 0, 0, true, true)
 	if err != nil {
 		ResponseError(w, http.StatusForbidden, err)
 		return
