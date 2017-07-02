@@ -47,14 +47,15 @@ type secFileJob struct {
 }
 
 type Cast struct {
-	Session  string          `json:"session"`
-	Duration float64         `json:"duration"`
-	Records  [][]interface{} `json:"stdout,omitempty"`
-	Width    int             `json:"width"`
-	Height   int             `json:"height"`
-	Version  int             `json:"version"`
-	User     string          `json:"user,omitempty"`
-	Target   string          `json:"target,omitempty"`
+	Session   string          `json:"session"`
+	Duration  float64         `json:"duration"`
+	Records   [][]interface{} `json:"stdout,omitempty"`
+	Width     int             `json:"width"`
+	Height    int             `json:"height"`
+	Version   int             `json:"version"`
+	User      string          `json:"user,omitempty"`
+	Target    string          `json:"target,omitempty"`
+	StartTime string          `json:"start,omitempty"`
 
 	recorder chan *castEntry
 	file     *secFile
@@ -233,6 +234,7 @@ func (cast *Cast) Start(store *Store) error {
 	cast.Version = 1
 	cast.Width = 80
 	cast.Height = 24
+	cast.StartTime = time.Now().UTC().Format(time.RFC3339)
 
 	fd, err := newSecFile(store, cast.Session)
 	if err != nil {
@@ -331,7 +333,9 @@ func (cast *Cast) Store(store *Store) error {
 	defer func() {
 		rand.Read(jdata)
 	}()
-	return store.Set(BucketCasts, cast.Session, jdata)
+
+	store.Set(BucketCasts, "start~"+cast.StartTime, []byte(cast.Session))
+	return store.Set(BucketCasts, "cast~"+cast.Session, jdata)
 }
 
 func StartIndexerServer(store *Store) error {

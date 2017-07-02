@@ -777,7 +777,7 @@ func castGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := store.Get(BucketCasts, id)
+	data, err := store.Get(BucketCasts, "cast~"+id)
 	if len(data) == 0 || err != nil {
 		ResponseError(w, http.StatusNotFound, errors.New("no such cast"))
 		return
@@ -803,7 +803,7 @@ func castList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	entries, err := store.Scan(BucketCasts, "", 0, 0, true)
+	entries, err := store.Scan(BucketCasts, "start~", 0, 0, true)
 	if err != nil {
 		ResponseError(w, http.StatusForbidden, err)
 		return
@@ -813,11 +813,17 @@ func castList(w http.ResponseWriter, r *http.Request) {
 	i := 0
 	for _, entry := range entries {
 		var cast Cast
-		if err := json.Unmarshal([]byte(entry.Value), &cast); err != nil {
+
+		data, err := store.Get(BucketCasts, "cast~"+entry.Value)
+		if err != nil {
+			continue
+		}
+
+		if err := json.Unmarshal(data, &cast); err != nil {
 			continue
 		}
 		cast.Records = nil // do not transfer complete cast
-		cast.Session = entry.Key
+		cast.Session = entry.Value
 
 		c[i] = cast
 		i += 1
