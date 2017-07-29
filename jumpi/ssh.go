@@ -21,6 +21,16 @@ type server struct {
 
 var (
 	ErrNoHostKey = errors.New("no host key found")
+
+	SSHBanner string = `   _                       _
+  (_)                     (_)
+   _ _   _ _ __ ___  _ __  _ 
+  | | | | | '_ ' _ \| '_ \| |
+  | | |_| | | | | | | |_) | |
+  | |\__,_|_| |_| |_| .__/|_|
+ _/ |               | |      
+|__/                |_|      
+`
 )
 
 // parse a target declaration in the form user@host[:port]
@@ -28,6 +38,11 @@ func (server *server) parseTarget(session, id string) *Target {
 	var user string
 	var port int = 22
 	var host string
+
+	// it may be a config connection
+	if strings.HasPrefix(id, "config:") {
+		return &Target{Hostname: id}
+	}
 
 	splits := strings.Split(id, "@")
 	if len(splits) == 2 {
@@ -99,6 +114,9 @@ func (server *server) handle(conn net.Conn) {
 	var target *Target
 	if newChannel.ChannelType() == "session" {
 		target = server.parseTarget(session, sshConn.User())
+		if strings.HasPrefix(target.Hostname, "config:") {
+			target.Username = user
+		}
 	}
 
 	if target == nil {
