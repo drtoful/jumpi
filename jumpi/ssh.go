@@ -74,7 +74,10 @@ func (server *server) handle(conn net.Conn) {
 		log.Printf("ssh[main]: unable to create SSH connection for '%s': %s\n", conn.RemoteAddr().String(), err.Error())
 		return
 	}
-	defer sshConn.Close()
+	defer func() {
+		sshConn.Wait()
+		sshConn.Close()
+	}()
 	go ssh.DiscardRequests(reqs)
 
 	perm := sshConn.Permissions
@@ -111,6 +114,7 @@ func (server *server) handle(conn net.Conn) {
 		User:    user,
 		Target:  target.ID(),
 	}
+	target.Session = session
 	if err := target.Cast.Start(server.store); err != nil {
 		log.Printf("ssh[%s]: error: %s\n", session, err.Error())
 		return

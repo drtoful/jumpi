@@ -4,7 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net"
+	"strings"
 	"sync"
 
 	"golang.org/x/crypto/ssh"
@@ -16,6 +18,7 @@ type Target struct {
 	Port     int
 	Secret   *Secret
 	Cast     *Cast
+	Session  string
 
 	store *Store
 }
@@ -104,46 +107,109 @@ func (target *Target) authPassword() (string, error) {
 }
 
 func (target *Target) proxy(reqs1, reqs2 <-chan *ssh.Request, channel1, channel2 ssh.Channel) {
-	var closer sync.Once
-	closerChan := make(chan bool, 1)
+	var closer sync.WaitGroup
+	teardown := make(chan bool)
 
-	closeFunc := func() {
+	// data from server to client
+	closer.Add(1)
+	go func() {
+		defer func() {
+			log.Printf("ssh[%s]: stopping capture of data from server to client\n", target.Session)
+			teardown <- true
+			channel1.CloseWrite()
+			closer.Done()
+		}()
+		log.Printf("ssh[%s]: starting capture of data from server to client\n", target.Session)
+		target.Cast.Copy(channel1, channel2)
+	}()
+
+	// data from client to server
+	closer.Add(1)
+	go func() {
+		defer func() {
+			log.Printf("ssh[%s]: no more data from client, closing down server-client channel\n", target.Session)
+			teardown <- true
+			channel2.CloseWrite()
+			closer.Done()
+		}()
+		io.Copy(channel2, channel1)
+	}()
+
+	defer func() {
+		log.Printf("ssh[%s]: tearing down channel\n", target.Session)
+		go func() {
+			// consume teardown channel
+			for _ = range teardown {
+			}
+		}()
+
+		// one of the channels has been teardowned, so close
+		// all others
 		channel1.Close()
 		channel2.Close()
-	}
-	defer closer.Do(closeFunc)
 
-	go func() {
-		target.Cast.Copy(channel1, channel2)
-		closerChan <- true
+		// wait for all go-routines to close
+		closer.Wait()
+		close(teardown)
 	}()
 
-	go func() {
-		io.Copy(channel2, channel1)
-		closerChan <- true
-	}()
-
+	hasExec := false
 	for {
 		select {
 		case req := <-reqs1:
 			if req == nil {
 				return
 			}
+			log.Printf("ssh[%s]: handling client request '%s'\n", target.Session, req.Type)
 			b, err := channel2.SendRequest(req.Type, req.WantReply, req.Payload)
 			if err != nil {
+				log.Printf("ssh[%s]: unable to send client request '%s' to server: %s\n", target.Session, req.Type, err.Error())
 				return
 			}
-			req.Reply(b, nil)
+			if req.WantReply {
+				if err := req.Reply(b, nil); err != nil {
+					log.Printf("ssh[%s]: error while waiting for response to '%s': %s\n", target.Session, req.Type, err.Error())
+					return
+				}
+			}
+
+			if req.Type == "exec" {
+				hasExec = true
+			}
+
+			break
 		case req := <-reqs2:
 			if req == nil {
 				return
 			}
+			log.Printf("ssh[%s]: handling server request '%s'\n", target.Session, req.Type)
 			b, err := channel1.SendRequest(req.Type, req.WantReply, req.Payload)
 			if err != nil {
+				log.Printf("ssh[%s]: unable to send server request '%s' to client: %s\n", target.Session, req.Type, err.Error())
 				return
 			}
-			req.Reply(b, nil)
-		case <-closerChan:
+			if req.WantReply {
+				if err := req.Reply(b, nil); err != nil {
+					log.Printf("ssh[%s]: error while waiting for response to '%s': %s\n", target.Session, req.Type, err.Error())
+					return
+				}
+			}
+
+			// handle 'exit-*' requests, concludes handling 'exec' request
+			// from client, so we can complete teardown
+			if hasExec && strings.HasPrefix(req.Type, "exit-") {
+				return
+			}
+
+			break
+		case <-teardown:
+			// if the client has issued an 'exec' request, we will have
+			// to wait for the server to answer with a "exit-status" or
+			// "exit-signal" request, before closing down channels
+			if hasExec {
+				log.Printf("ssh[%s]: client issued 'exec' request beforehand, will wait for server to respond\n", target.Session)
+				continue
+			}
 			return
 		}
 	}
@@ -178,12 +244,14 @@ func (target *Target) Connect(newChannel ssh.NewChannel, chans <-chan ssh.NewCha
 	}
 	defer sessChannel.Close()
 
+	var closer sync.WaitGroup
 	go func() {
 		for newChannel := range chans {
 			if newChannel == nil {
 				return
 			}
 
+			log.Printf("ssh[%s]: opening new channel %s\n", target.Session, newChannel.ChannelType())
 			channel2, reqs2, err := client.OpenChannel(newChannel.ChannelType(), newChannel.ExtraData())
 			if err != nil {
 				x, ok := err.(*ssh.OpenChannelError)
@@ -200,15 +268,29 @@ func (target *Target) Connect(newChannel ssh.NewChannel, chans <-chan ssh.NewCha
 				channel2.Close()
 				continue
 			}
-			go target.proxy(reqs, reqs2, channel, channel2)
+
+			closer.Add(1)
+			go func() {
+				defer closer.Done()
+				target.proxy(reqs, reqs2, channel, channel2)
+			}()
 		}
 	}()
 
+	log.Printf("ssh[%s]: opening 'session' channel on server\n", target.Session)
 	channel2, reqs2, err := client.OpenChannel("session", []byte{})
 	if err != nil {
+		log.Printf("ssh[%s]: unable to open 'session' channel on server: %s\n", target.Session, err.Error())
 		return err
 	}
 
-	target.proxy(sessReqs, reqs2, sessChannel, channel2)
+	closer.Add(1)
+	go func() {
+		defer closer.Done()
+		target.proxy(sessReqs, reqs2, sessChannel, channel2)
+	}()
+
+	// wait for all sup-proxies to finish
+	closer.Wait()
 	return nil
 }
