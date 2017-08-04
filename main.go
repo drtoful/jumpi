@@ -54,7 +54,8 @@ func main() {
 	jumpi.InitRoleManager(store)
 	jumpi.StartAPIServer("/", store)
 	jumpi.StartIndexerServer(store)
-	if err := jumpi.StartSSHServer(store, *hostKeyOpt); err != nil {
+	auth, _ := jumpi.StartTwoFactorAuthServer(store)
+	if err := jumpi.StartSSHServer(store, auth, *hostKeyOpt); err != nil {
 		log.Fatalf("unable to start SSH server: %s\n", err.Error())
 	}
 

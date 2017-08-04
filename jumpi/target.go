@@ -5,11 +5,9 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"strings"
 	"sync"
 
 	"golang.org/x/crypto/ssh"
-	"golang.org/x/crypto/ssh/terminal"
 )
 
 type Target struct {
@@ -151,32 +149,7 @@ func (target *Target) proxy(reqs1, reqs2 <-chan *ssh.Request, channel1, channel2
 	}
 }
 
-func (target *Target) Connect(newChannel ssh.NewChannel, chans <-chan ssh.NewChannel) error {
-	// if username start with config, we have a config connection, so
-	// we will handle this specially
-	if strings.HasPrefix(target.Hostname, "config:") {
-		var config Config
-		switch target.Hostname {
-		case "config:2fa:yubikey":
-			config = &ConfigYubikey{Username: target.Username}
-			break
-		}
-
-		if config == nil {
-			return errors.New("unknown config option")
-		}
-
-		channel, _, err := newChannel.Accept()
-		if err != nil {
-			return err
-		}
-		defer channel.Close()
-
-		tty := terminal.NewTerminal(channel, "")
-		tty.Write([]byte(SSHBanner))
-		return config.Handle(tty)
-	}
-
+func (target *Target) Connect(sessChannel ssh.Channel, sessReqs <-chan *ssh.Request, chans <-chan ssh.NewChannel) error {
 	clientConfig := &ssh.ClientConfig{
 		User: target.Username,
 		Auth: []ssh.AuthMethod{
@@ -198,12 +171,6 @@ func (target *Target) Connect(newChannel ssh.NewChannel, chans <-chan ssh.NewCha
 		return err
 	}
 	defer client.Close()
-
-	sessChannel, sessReqs, err := newChannel.Accept()
-	if err != nil {
-		return err
-	}
-	defer sessChannel.Close()
 
 	go func() {
 		for newChannel := range chans {
