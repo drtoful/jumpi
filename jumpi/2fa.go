@@ -30,7 +30,7 @@ func (h *yubikeyHandler) Verify(username, token string) bool {
 	h.lock.Lock()
 	defer h.lock.Unlock()
 
-	val, err := h.store.Get(BucketUsers, username+"~2fa~config")
+	val, err := h.store.Get(BucketUsersConfig, username+"~2fa~config")
 	if err != nil || len(val) == 0 {
 		log.Printf("yubikey_auth: unable to verify token for '%s': unable to find/load configuration\n", username)
 		return false
@@ -56,12 +56,12 @@ func (h *yubikeyHandler) Setup(username string, tty *terminal.Terminal) error {
 	_, ok, err := h.yubiAuth.Verify(token)
 	if err == nil && ok {
 		// save yubikey ID into store
-		if err := h.store.Set(BucketUsers, username+"~2fa~config", []byte(token[:12])); err != nil {
+		if err := h.store.Set(BucketUsersConfig, username+"~2fa~config", []byte(token[:12])); err != nil {
 			return err
 		}
 
-		if err := h.store.Set(BucketUsers, username+"~2fa~kind", []byte("yubikey")); err != nil {
-			h.store.Delete(BucketUsers, username+"~2fa~config")
+		if err := h.store.Set(BucketUsersConfig, username+"~2fa~kind", []byte("yubikey")); err != nil {
+			h.store.Delete(BucketUsersConfig, username+"~2fa~config")
 			tty.Write([]byte("unable to activate 'yubikey' two factor authentication\n"))
 			return err
 		}
@@ -190,7 +190,7 @@ func (h *TwoFactorAuth) Setup(username, kind string, tty *terminal.Terminal) err
 }
 
 func (h *TwoFactorAuth) HasTwoFactor(username string) (string, bool) {
-	val, err := h.store.Get(BucketUsers, username+"~2fa~kind")
+	val, err := h.store.Get(BucketUsersConfig, username+"~2fa~kind")
 	if err == nil && len(val) > 0 {
 		return string(val), true
 	}

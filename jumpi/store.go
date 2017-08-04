@@ -60,14 +60,15 @@ type record struct {
 }
 
 var (
-	BucketMeta       = []string{"meta"}
-	BucketMetaAdmins = []string{"meta", "admins"}
-	BucketSecrets    = []string{"secrets"}
-	BucketTargets    = []string{"targets"}
-	BucketSessions   = []string{"sessions"}
-	BucketUsers      = []string{"users"}
-	BucketRoles      = []string{"roles"}
-	BucketCasts      = []string{"casts"}
+	BucketMeta        = []string{"meta"}
+	BucketMetaAdmins  = []string{"meta", "admins"}
+	BucketSecrets     = []string{"secrets"}
+	BucketTargets     = []string{"targets"}
+	BucketSessions    = []string{"sessions"}
+	BucketUsers       = []string{"users"}
+	BucketUsersConfig = []string{"users", "config"}
+	BucketRoles       = []string{"roles"}
+	BucketCasts       = []string{"casts"}
 
 	ErrNoBucketGiven     = errors.New("no bucket specified")
 	ErrLocked            = errors.New("store is locked")
@@ -126,6 +127,9 @@ func NewStore(filename string) (*Store, error) {
 		return nil, err
 	}
 	if err := store.Create(BucketUsers); err != nil {
+		return nil, err
+	}
+	if err := store.Create(BucketUsersConfig); err != nil {
 		return nil, err
 	}
 	if err := store.Create(BucketRoles); err != nil {
