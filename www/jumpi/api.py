@@ -157,9 +157,10 @@ class APIRoles(object):
             return vals
         return []
 
-    def set(self, name, rex_user, rex_target):
+    def set(self, name, rex_user, rex_target, require_2fa):
         ok, err = api.post("/v1/roles", dict( \
-            name = name, rex_user = rex_user, rex_target = rex_target))
+            name = name, rex_user = rex_user, rex_target = rex_target, \
+            require_2fa = require_2fa))
         if not ok:
             return err
         return None

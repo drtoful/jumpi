@@ -9,6 +9,7 @@
             <th>Name</th>
             <th>User Regex</th>
             <th>Target Regex</th>
+            <th>TwoFactor</th>
             <th>&nbsp;</th>
         </tr>
     </thead>
@@ -19,6 +20,10 @@
             <td>{{ r.name }}</td>
             <td>{{ r.rex_user }}</td>
             <td>{{ r.rex_target }}</td>
+            <td style="text-align: center;">
+                {% if r.require_2fa %}<i class="fa fa-thumbs-up text-success"></i>{% endif %}
+                {% if not r.require_2fa %}<i class="fa fa-thumbs-down text-danger"></i>{% endif %}
+            </td>
             <td>
                 <a href="{{ url_for('ui.delete_role') }}?id={{ r.name }}"><span class="fa fa-trash"></span></a>
             </td>
@@ -68,6 +73,9 @@
                     </div>
                     <div class="form-group">
                         <input type="text" class="form-control" name="rex_target" placeholder="Target Regex" />
+                    </div>
+                    <div class="form-group">
+                        <input type="checkbox" class="form-control" name="require_2fa" /> Requires Two-Factor Authentication
                     </div>
                     <div class="form-group">
                         <button class="btn btn-primary">Add Role</button>

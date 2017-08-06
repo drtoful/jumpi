@@ -110,7 +110,7 @@ func (server *server) handle(conn net.Conn) {
 	defer sessChan.Close()
 
 	// verify twofactor authentication if any
-	//has_twofactor := false
+	has_twofactor := false
 	if _, has := server.twofa.HasTwoFactor(user); has {
 		log.Printf("ssh[%s]: verifying user with two factor authentication\n", session)
 
@@ -125,11 +125,11 @@ func (server *server) handle(conn net.Conn) {
 
 		if server.twofa.Verify(user, token) {
 			log.Printf("ssh[%s]: two factor verification successful, elevating rights\n", session)
-			//has_twofactor = true
+			has_twofactor = true
 		}
 	}
 
-	ok, role := CheckRole(user, sshConn.User())
+	ok, role := CheckRole(user, sshConn.User(), has_twofactor)
 	if !ok {
 		log.Printf("ssh[%s]: permission denied to access '%s'\n", session, sshConn.User())
 		return
