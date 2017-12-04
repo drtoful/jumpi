@@ -601,14 +601,17 @@ func userList(w http.ResponseWriter, r *http.Request) {
 	type _response struct {
 		Name        string `json:"name"`
 		Fingerprint string `json:"fingerprint"`
+		TwoFactor   bool   `json:"has_twofactor"`
 	}
 
 	c := make([]_response, len(entries))
 	i := 0
 	for _, entry := range entries {
+		val, err := store.Get(BucketUsersConfig, entry.Value+"~2fa~kind")
 		c[i] = _response{
 			Name:        entry.Value,
 			Fingerprint: entry.Key,
+			TwoFactor:   err == nil && len(val) > 0,
 		}
 		i += 1
 	}

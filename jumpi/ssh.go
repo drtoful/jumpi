@@ -12,15 +12,27 @@ import (
 
 	"github.com/drtoful/jumpi/utils"
 	"golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 type server struct {
 	store  *Store
 	config *ssh.ServerConfig
+	twofa  *TwoFactorAuth
 }
 
 var (
 	ErrNoHostKey = errors.New("no host key found")
+
+	SSHBanner string = `   _                       _
+  (_)                     (_)
+   _ _   _ _ __ ___  _ __  _ 
+  | | | | | '_ ' _ \| '_ \| |
+  | | |_| | | | | | | |_) | |
+  | |\__,_|_| |_| |_| .__/|_|
+ _/ |               | |      
+|__/                |_|      
+`
 )
 
 // parse a target declaration in the form user@host[:port]
@@ -92,7 +104,35 @@ func (server *server) handle(conn net.Conn) {
 		return
 	}
 
-	ok, role := CheckRole(user, sshConn.User())
+	// accept newchannel connection
+	sessChan, sessReqs, err := newChannel.Accept()
+	if err != nil {
+		log.Printf("ssh[%s]: unable to accept channel connection: %s\n", session, err.Error())
+		return
+	}
+	defer sessChan.Close()
+
+	// verify twofactor authentication if any
+	has_twofactor := false
+	if _, has := server.twofa.HasTwoFactor(user); has {
+		log.Printf("ssh[%s]: verifying user with two factor authentication\n", session)
+
+		tty := terminal.NewTerminal(sessChan, "")
+		tty.Write([]byte(SSHBanner))
+		tty.Write([]byte("This Account has Two Factor Authentication enabled\n"))
+		token, err := tty.ReadPassword("Enter Token: ")
+		if err != nil {
+			log.Printf("ssh[%s]: error: unable to read token: %s\n", session, err.Error())
+			return
+		}
+
+		if server.twofa.Verify(user, token) {
+			log.Printf("ssh[%s]: two factor verification successful, elevating rights\n", session)
+			has_twofactor = true
+		}
+	}
+
+	ok, role := CheckRole(user, sshConn.User(), has_twofactor)
 	if !ok {
 		log.Printf("ssh[%s]: permission denied to access '%s'\n", session, sshConn.User())
 		return
@@ -101,6 +141,25 @@ func (server *server) handle(conn net.Conn) {
 
 	var target *Target
 	if newChannel.ChannelType() == "session" {
+		// it may be a config connection
+		if strings.HasPrefix(sshConn.User(), "config:") {
+			log.Printf("ssh[%s]: user is entering configuration '%s'\n", session, sshConn.User())
+
+			// twofactor authentication setup
+			if strings.HasPrefix(sshConn.User(), "config:2fa:") {
+				kind := sshConn.User()[len("config:2fa:"):len(sshConn.User())]
+				tty := terminal.NewTerminal(sessChan, "")
+				tty.Write([]byte(SSHBanner))
+				if err := server.twofa.Setup(user, kind, tty); err != nil {
+					log.Printf("ssh[%s]: unable to activate twofactor authentication: %s\n", session, err.Error())
+					return
+				}
+				log.Printf("ssh[%s]: user successfuly activated two factor authentication\n", session)
+			}
+
+			return
+		}
+
 		target = server.parseTarget(session, sshConn.User())
 	}
 
@@ -122,7 +181,7 @@ func (server *server) handle(conn net.Conn) {
 	log.Printf("ssh[%s]: starting recording of session\n", session)
 
 	log.Printf("ssh[%s]: connecting to %s\n", session, target.ID())
-	if err := target.Connect(newChannel, chans); err != nil {
+	if err := target.Connect(sessChan, sessReqs, chans); err != nil {
 		log.Printf("ssh[%s]: error: %s\n", session, err.Error())
 	}
 
@@ -186,13 +245,14 @@ func (server *server) auth(conn ssh.ConnMetadata, key ssh.PublicKey) (*ssh.Permi
 	if err := user.Load(server.store); err != nil {
 		return nil, err
 	}
+
 	perm.Extensions["user"] = user.Name
 	log.Printf("ssh[%s]: user '%s' successfully logged on\n", session, user.Name)
 
 	return perm, nil
 }
 
-func StartSSHServer(store *Store, hostkey string) error {
+func StartSSHServer(store *Store, twofa *TwoFactorAuth, hostkey string) error {
 	// try to load hostkey from file
 	data, err := ioutil.ReadFile(hostkey)
 	if err != nil {
@@ -204,7 +264,7 @@ func StartSSHServer(store *Store, hostkey string) error {
 		return err
 	}
 
-	server := &server{store: store}
+	server := &server{store: store, twofa: twofa}
 	server.config = &ssh.ServerConfig{
 		PublicKeyCallback: server.auth,
 	}

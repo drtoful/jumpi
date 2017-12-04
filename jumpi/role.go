@@ -13,6 +13,7 @@ type Role struct {
 	Name        string `json:"name"`
 	UserRegex   string `json:"rex_user"`
 	TargetRegex string `json:"rex_target"`
+	Requires2FA bool   `json:"require_2fa"`
 
 	rexUser   *regexp.Regexp
 	rexTarget *regexp.Regexp
@@ -94,7 +95,7 @@ func DeleteRole(role *Role) error {
 	return nil
 }
 
-func CheckRole(user, target string) (bool, string) {
+func CheckRole(user, target string, twofactor bool) (bool, string) {
 	manager.mutex.Lock()
 	defer manager.mutex.Unlock()
 
@@ -103,7 +104,7 @@ func CheckRole(user, target string) (bool, string) {
 			continue
 		}
 
-		if role.rexUser.MatchString(user) && role.rexTarget.MatchString(target) {
+		if role.rexUser.MatchString(user) && role.rexTarget.MatchString(target) && (!role.Requires2FA || twofactor) {
 			return true, role.Name
 		}
 	}

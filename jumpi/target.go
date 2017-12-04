@@ -215,7 +215,7 @@ func (target *Target) proxy(reqs1, reqs2 <-chan *ssh.Request, channel1, channel2
 	}
 }
 
-func (target *Target) Connect(newChannel ssh.NewChannel, chans <-chan ssh.NewChannel) error {
+func (target *Target) Connect(sessChannel ssh.Channel, sessReqs <-chan *ssh.Request, chans <-chan ssh.NewChannel) error {
 	clientConfig := &ssh.ClientConfig{
 		User: target.Username,
 		Auth: []ssh.AuthMethod{
@@ -237,12 +237,6 @@ func (target *Target) Connect(newChannel ssh.NewChannel, chans <-chan ssh.NewCha
 		return err
 	}
 	defer client.Close()
-
-	sessChannel, sessReqs, err := newChannel.Accept()
-	if err != nil {
-		return err
-	}
-	defer sessChannel.Close()
 
 	var closer sync.WaitGroup
 	go func() {

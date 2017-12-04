@@ -8,6 +8,7 @@
         <tr>
             <th>Name</th>
             <th>Fingerprint</th>
+            <th>TwoFactor</th>
             <th>&nbsp;</th>
         </tr>
     </thead>
@@ -17,6 +18,10 @@
         <tr>
             <td>{{ t.name }}</td>
             <td>{{ t.fingerprint }}</td>
+            <td style="text-align: center;">
+                {% if t.has_twofactor %}<i class="fa fa-thumbs-up text-success"></i>{% endif %}
+                {% if not t.has_twofactor %}<i class="fa fa-thumbs-down text-danger"></i>{% endif %}
+            </td>
             <td>
                 <a href="{{ url_for('ui.delete_user') }}?id={{ t.fingerprint }}"><span class="fa fa-trash"></span></a>
             </td>

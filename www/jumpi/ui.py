@@ -186,8 +186,9 @@ def roles():
         name = request.form.get("name", "")
         rex_user = request.form.get("rex_user", "")
         rex_target = request.form.get("rex_target", "")
+        require_2fa = "require_2fa" in request.form
 
-        err = api.set(name, rex_user, rex_target)
+        err = api.set(name, rex_user, rex_target, require_2fa)
         if not err is None:
             error = err
 
