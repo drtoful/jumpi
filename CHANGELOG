@@ -1,0 +1,5 @@
+0.1.1
+- BUGFIX: correct teardown of session with 'exec' requests
+
+0.1
+- Initial Release
