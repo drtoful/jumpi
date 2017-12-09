@@ -30,6 +30,11 @@ func (h *yubikeyHandler) Verify(username, token string) bool {
 	h.lock.Lock()
 	defer h.lock.Unlock()
 
+	if h.yubiAuth == nil {
+		log.Println("yubikey_auth: yubikey authentication is not correctly configured, but user wants to use it")
+		return false
+	}
+
 	val, err := h.store.Get(BucketUsersConfig, username+"~2fa~config")
 	if err != nil || len(val) == 0 {
 		log.Printf("yubikey_auth: unable to verify token for '%s': unable to find/load configuration\n", username)
@@ -43,6 +48,11 @@ func (h *yubikeyHandler) Verify(username, token string) bool {
 func (h *yubikeyHandler) Setup(username string, tty *terminal.Terminal) error {
 	h.lock.Lock()
 	defer h.lock.Unlock()
+
+	if h.yubiAuth == nil {
+		tty.Write([]byte("Yubikey Authentication unavailable"))
+		return errors.New("yubikey authetnication is not correctly configured, but user wants to use it")
+	}
 
 	// get next token code
 	token, err := tty.ReadPassword("Enter YubiKey OTP: ")
