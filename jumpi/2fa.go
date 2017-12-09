@@ -3,6 +3,7 @@ package jumpi
 import (
 	"errors"
 	"log"
+	"net/http"
 	"strings"
 	"sync"
 	"time"
@@ -24,6 +25,16 @@ type yubikeyHandler struct {
 	yubiAuth *yubigo.YubiAuth
 	store    *Store
 	lock     *sync.Mutex
+}
+
+func init() {
+	// yubigo library should use system proxy
+	tr := &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+	}
+	client := &http.Client{}
+	client.Transport = tr
+	yubigo.HTTPClient = client
 }
 
 func (h *yubikeyHandler) Verify(username, token string) bool {
