@@ -56,6 +56,12 @@ As the third step you will need to define a 'user'. A 'user' is defined by its S
 string. Lastly you will need to define a 'role' that defines, which user(s) can access which 
 target(s).
 
+#### User Configuration
+
+Users can access individual configuration for their users under a special target (see **Connect**)
+`config:<configuration>`. Note, that this target is subject to the defined roles. So you will need
+to allow users to access configuration endpoints.
+
 ### Connect
 
 After you have defined at least one secret, target, user and role you can connect to any of your
@@ -71,6 +77,31 @@ Note that for 'target' you need to provide the full string as it appears in your
 need to provide a string that has the following format:
 
     <user>@<host>:<port>
+
+## Two-Factor Authentication
+
+JumPi supports two factor authentication. The user can activate two-factor authentication for
+their account by accessing the target `config:2fa:<type>`. Make sure you have a role that allows
+users to access this special target.
+
+Currently the following two-factor types are supported:
+
+- [yubikey](https://www.yubico.com/products/yubikey-hardware/)
+
+In addition you can specify roles that enforce two-factor authentication to access the
+specified targets.
+
+### Yubico Yubikey
+
+In order to enable yubikey two-factor authentication you will need to store the API
+key into the store under the name `config:yubikey_api`. The key must be stored as
+**password** and in the form `<client_id>:<secret_key>`. You will see that it worked
+in the output of JumPi.
+
+Note, that currently only the official API servers are supported.
+
+JumPi will honor `http_proxy` and `https_proxy` environment settings when connecting
+to the API servers.
 
 ## Security
 
