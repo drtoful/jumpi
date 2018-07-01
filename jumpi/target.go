@@ -174,6 +174,7 @@ func (target *Target) proxy(reqs1, reqs2 <-chan *ssh.Request, channel1, channel2
 			}
 
 			if req.Type == "exec" {
+				target.Cast.HasExec = true
 				hasExec = true
 			}
 
