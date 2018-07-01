@@ -58,5 +58,15 @@ func (user *User) Load(store *Store) error {
 }
 
 func (user *User) Delete(store *Store) error {
+	// delete 2fa configuration for this user
+	err := user.Load(store)
+	if err != nil {
+		return err
+	}
+
+	store.Delete(BucketUsersConfig, user.Name+"~2fa~kind")
+	store.Delete(BucketUsersConfig, user.Name+"~2fa~config")
+
+	// finally delete the user itself
 	return store.Delete(BucketUsers, user.KeyFingerprint)
 }
