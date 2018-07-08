@@ -56,7 +56,6 @@ type Cast struct {
 	User      string          `json:"user,omitempty"`
 	Target    string          `json:"target,omitempty"`
 	StartTime string          `json:"start,omitempty"`
-	HasExec   bool            `json:"has_exec,omitempty"`
 
 	recorder chan *castEntry
 	file     *secFile
@@ -300,11 +299,6 @@ func (cast *Cast) Store(store *Store) error {
 	cast.Records = make([][]interface{}, 0)
 	cast.Duration = 0
 	defer cast.file.Close()
-
-	// TODO: handle 'exec' cast
-	if cast.HasExec {
-		return nil
-	}
 
 	// read json objects line by line and add them to the
 	// object and then store it in the database

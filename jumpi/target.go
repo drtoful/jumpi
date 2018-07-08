@@ -1,6 +1,8 @@
 package jumpi
 
 import (
+	"bytes"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
@@ -174,8 +176,18 @@ func (target *Target) proxy(reqs1, reqs2 <-chan *ssh.Request, channel1, channel2
 			}
 
 			if req.Type == "exec" {
-				target.Cast.HasExec = true
 				hasExec = true
+
+				// parse 'exec' payload which consists of the
+				// channel id this occurs and the actual command
+				var channel uint32
+				buf := bytes.NewReader(req.Payload[:4])
+				if err := binary.Read(buf, binary.BigEndian, &channel); err != nil {
+					log.Printf("ssh[%s]: unable to parse channel number from 'exec' command\n", target.Session)
+					return
+				}
+				cmd := string(req.Payload[4:])
+				log.Printf("ssh[%s]: executing command on channel %d: %s\n", target.Session, channel, cmd)
 			}
 
 			break
@@ -199,6 +211,21 @@ func (target *Target) proxy(reqs1, reqs2 <-chan *ssh.Request, channel1, channel2
 			// handle 'exit-*' requests, concludes handling 'exec' request
 			// from client, so we can complete teardown
 			if hasExec && strings.HasPrefix(req.Type, "exit-") {
+				// parse command exit status or signal
+				switch req.Type {
+				case "exit-status":
+					var status uint32
+					buf := bytes.NewReader(req.Payload[:4])
+					if err := binary.Read(buf, binary.BigEndian, &status); err != nil {
+						log.Printf("ssh[%s]: unable to parse exit status\n", target.Session)
+						return
+					}
+					log.Printf("ssh[%s]: command exited with status %d\n", target.Session, status)
+					break
+				case "exit-signal":
+					break
+				}
+
 				return
 			}
 
