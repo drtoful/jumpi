@@ -108,9 +108,9 @@ func (target *Target) authPassword() (string, error) {
 	return password, nil
 }
 
-func (target *Target) proxy(reqs1, reqs2 <-chan *ssh.Request, channel1, channel2 ssh.Channel) {
-	var closer sync.WaitGroup
-	teardown := make(chan bool)
+func (target *Target) record(channel1, channel2 ssh.Channel, teardown chan bool, closer *sync.WaitGroup) {
+	// this will only record data send back from server to client (the echo data
+	// from the input and the actual terminal data)
 
 	// data from server to client
 	closer.Add(1)
@@ -136,6 +136,11 @@ func (target *Target) proxy(reqs1, reqs2 <-chan *ssh.Request, channel1, channel2
 		}()
 		io.Copy(channel2, channel1)
 	}()
+}
+
+func (target *Target) proxy(reqs1, reqs2 <-chan *ssh.Request, channel1, channel2 ssh.Channel) {
+	closer := &sync.WaitGroup{}
+	teardown := make(chan bool)
 
 	defer func() {
 		log.Printf("ssh[%s]: tearing down channel\n", target.Session)
@@ -153,6 +158,7 @@ func (target *Target) proxy(reqs1, reqs2 <-chan *ssh.Request, channel1, channel2
 		// wait for all go-routines to close
 		closer.Wait()
 		close(teardown)
+		log.Printf("ssh[%s]: teardown completed\n", target.Session)
 	}()
 
 	hasExec := false
@@ -188,6 +194,21 @@ func (target *Target) proxy(reqs1, reqs2 <-chan *ssh.Request, channel1, channel2
 				}
 				cmd := string(req.Payload[4:])
 				log.Printf("ssh[%s]: executing command on channel %d: %s\n", target.Session, channel, cmd)
+
+				// handle 'scp' command
+				if strings.HasPrefix(cmd, "scp") {
+					log.Printf("ssh[%s]: detected secury copy command, starting interpreter\n", target.Session)
+					target.handleSCP(cmd, channel1, channel2, teardown, closer)
+					break
+				}
+
+				// for all other commands, we want to record the output
+				target.record(channel1, channel2, teardown, closer)
+			}
+
+			// capture data, when client is requesting a 'shell'
+			if req.Type == "shell" {
+				target.record(channel1, channel2, teardown, closer)
 			}
 
 			break
