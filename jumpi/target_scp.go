@@ -66,7 +66,7 @@ func (s *scp) Copy(dest io.Writer, src io.Reader) (int64, error) {
 			// interpret the read data
 			i = 0
 			for {
-				if i == nr {
+				if i >= nr {
 					break
 				}
 
@@ -76,19 +76,21 @@ func (s *scp) Copy(dest io.Writer, src io.Reader) (int64, error) {
 					var k int
 					var found = false
 					for k = i; k < nr; k += 1 {
+						if k >= nr {
+							break
+						}
 						if buf[k] == '\n' {
 							found = true
 							break
 						}
 					}
 
-					i = k + 1
+					// write to buffer
+					head_buf.Write(buf[i:k])
+
 					// advance the pointer in the buffer
-					if found {
-						// write found bit into head_buf (we could
-						// have read part of the header before)
-						head_buf.Write(buf[i-k-1 : k])
-					} else {
+					i = k + 1
+					if !found {
 						// we did not yet find the end of the header,
 						// so we continue searching
 						continue
