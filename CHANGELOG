@@ -1,3 +1,11 @@
+0.2
+- Adding Two-Factor Authentication Framework
+- Adding Yubikey as Two-Factor Authentication Method
+- Adding Configuration Framework
+- improved logging: printing exec command before passing to target
+- improved logging: interpreting scp
+- improved logging: made logging output consistent with http logging output
+
 0.1.1
 - BUGFIX: correct teardown of session with 'exec' requests
 
