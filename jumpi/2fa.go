@@ -172,7 +172,7 @@ func StartTwoFactorAuthServer(store *Store) (*TwoFactorAuth, error) {
 			time.Sleep(time.Second)
 		}
 
-		log.Println("starting two factor authentication services")
+		log.Println("yubikey_auth: starting two factor authentication services")
 		result.lock.Lock()
 		defer result.lock.Unlock()
 		result.services["yubikey"] = startYubikeyAuth(store)

@@ -2,10 +2,12 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/drtoful/jumpi/jumpi"
 	"github.com/drtoful/jumpi/utils/mlock"
@@ -17,6 +19,18 @@ var (
 	hostKeyOpt = flag.String("hostkey", "id_rsa", "path to host key to use for SSH server")
 )
 
+type logwriter struct {
+}
+
+func (writer logwriter) Write(bytes []byte) (int, error) {
+	return fmt.Print(time.Now().UTC().Format(time.RFC3339) + " " + string(bytes))
+}
+
+func init() {
+	log.SetFlags(0)
+	log.SetOutput(new(logwriter))
+}
+
 func main() {
 	flag.Parse()
 
@@ -25,10 +39,10 @@ func main() {
 	if *mlockOpt {
 		if mlock.Supported() {
 			if err := mlock.LockMemory(); err != nil {
-				log.Fatalf("mlock init error: %s\n", err.Error())
+				log.Fatalf("main: mlock init error: %s\n", err.Error())
 			}
 		} else {
-			log.Println("MLock is unavailable to this Operating system, will continue without")
+			log.Println("main: MLock is unavailable to this Operating system, will continue without")
 		}
 	}
 
@@ -42,7 +56,7 @@ func main() {
 	// create a new database
 	store, err := jumpi.NewStore(*dbOpt)
 	if err != nil {
-		log.Fatalf("db init error: %s\n", err.Error())
+		log.Fatalf("main: db init error: %s\n", err.Error())
 	}
 	defer store.Close()
 
@@ -56,7 +70,7 @@ func main() {
 	jumpi.StartIndexerServer(store)
 	auth, _ := jumpi.StartTwoFactorAuthServer(store)
 	if err := jumpi.StartSSHServer(store, auth, *hostKeyOpt); err != nil {
-		log.Fatalf("unable to start SSH server: %s\n", err.Error())
+		log.Fatalf("main: unable to start SSH server: %s\n", err.Error())
 	}
 
 	// all listeners are started in the background as

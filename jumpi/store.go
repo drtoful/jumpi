@@ -527,11 +527,11 @@ func (store *Store) FTR() {
 	// store password
 	pwd, err := readPwd("Enter Unlock Password: ")
 	if err != nil {
-		log.Fatalf("ftr failed: %s\n", err.Error())
+		log.Fatalf("store: ftr failed: %s\n", err.Error())
 	}
 
 	if err := store.Unlock(pwd); err != nil {
-		log.Fatalf("ftr failed: %s\n", err.Error())
+		log.Fatalf("store: ftr failed: %s\n", err.Error())
 	}
 	defer func() {
 		store.Lock()
@@ -540,7 +540,7 @@ func (store *Store) FTR() {
 	// admin password (for ui/api)
 	pwd, err = readPwd("Enter Admin Password: ")
 	if err != nil {
-		log.Fatalf("ftr failed: %s\n", err.Error())
+		log.Fatalf("store: ftr failed: %s\n", err.Error())
 	}
 	defer func() {
 		rand.Read(pwd)
@@ -548,10 +548,10 @@ func (store *Store) FTR() {
 
 	challenge, err := bcrypt.GenerateFromPassword(pwd, 12)
 	if err != nil {
-		log.Fatalf("ftr failed: %s\n", err.Error())
+		log.Fatalf("store: ftr failed: %s\n", err.Error())
 	}
 	if err := store.SetRaw(BucketMetaAdmins, "admin", challenge); err != nil {
-		log.Fatalf("ftr failed: %s\n", err.Error())
+		log.Fatalf("store: ftr failed: %s\n", err.Error())
 	}
 
 	fmt.Println("Setup complete")

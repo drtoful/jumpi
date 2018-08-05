@@ -83,7 +83,7 @@ func (server *server) handle(conn net.Conn) {
 
 	sshConn, chans, reqs, err := ssh.NewServerConn(conn, server.config)
 	if err != nil {
-		log.Printf("ssh[main]: unable to create SSH connection for '%s': %s\n", conn.RemoteAddr().String(), err.Error())
+		log.Printf("ssh: unable to create SSH connection for '%s': %s\n", conn.RemoteAddr().String(), err.Error())
 		return
 	}
 	defer func() {
@@ -191,7 +191,7 @@ func (server *server) handle(conn net.Conn) {
 }
 
 func (server *server) serve() error {
-	log.Println("starting SSH server on port 2022")
+	log.Println("ssh: starting SSH server on port 2022")
 	conn, err := net.Listen("tcp", ":2022")
 	if err != nil {
 		return err
@@ -201,7 +201,7 @@ func (server *server) serve() error {
 		for {
 			client, err := conn.Accept()
 			if err != nil {
-				log.Printf("ssh[main]: connect error: %s\n", err.Error())
+				log.Printf("ssh: connect error: %s\n", err.Error())
 				continue
 			}
 

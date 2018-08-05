@@ -74,8 +74,9 @@ func (l *logger) ServeHTTP(w http.ResponseWriter, r *http.Request, next http.Han
 		remote = host
 	}
 
-	l.Printf("%s %s %s \"%s %s %s\" %d %d \"%s\" \"%s\" %s %dms\n",
+	l.Printf("%s http[%d]: %s %s \"%s %s %s\" %d %d \"%s\" \"%s\" %s %dms\n",
 		time.Now().UTC().Format(time.RFC3339),
+		os.Getpid(),
 		remote,
 		user,
 		r.Method,
