@@ -167,12 +167,18 @@ func (target *Target) handleSCP(cmd string, channel1, channel2 ssh.Channel, tear
 	isSource := false
 	isSink := false
 
-	if sourceMode.MatchString(cmd) {
+	arguments := strings.Split(cmd, " ")
+	if len(arguments) < 2 {
+		log.Printf("scp[%s]: unable to get arguments of scp\n", target.Session)
+		return
+	}
+
+	if sourceMode.MatchString(arguments[1]) {
 		isSource = true
 		log.Printf("scp[%s]: detected source mode copy: client <- server\n", target.Session)
 	}
 
-	if sinkMode.MatchString(cmd) {
+	if sinkMode.MatchString(arguments[1]) {
 		isSink = true
 		log.Printf("scp[%s]: detected sink mode copy: client -> server\n", target.Session)
 	}
